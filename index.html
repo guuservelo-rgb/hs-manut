@@ -6,15 +6,15 @@
     <title>HS - Gestão & Orçamentos</title>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/html2pdf.js/0.10.1/html2pdf.bundle.min.js"></script>
     <style>
-        :root { --primary: #004a8d; --accent: #ff9800; --bg: #f4f7f6; --text: #333; }
+        :root { --primary: #004a8d; --accent: #ff9800; --bg: #f4f7f6; --text: #333; --danger: #d9534f; }
         body { font-family: 'Segoe UI', system-ui, sans-serif; background: var(--bg); color: var(--text); margin: 0; padding: 0; }
         .container { max-width: 950px; margin: 0 auto; padding: 15px; }
         
-        /* UI Estilo */
         .card { background: white; padding: 20px; border-radius: 15px; box-shadow: 0 4px 15px rgba(0,0,0,0.1); margin-bottom: 20px; border: 1px solid #e0e0e0; }
         h1, h2 { color: var(--primary); text-align: center; }
         .btn { background: var(--primary); color: white; border: none; padding: 12px 20px; border-radius: 8px; cursor: pointer; font-weight: bold; width: 100%; margin: 5px 0; font-size: 16px; }
         .btn-accent { background: var(--accent); }
+        .btn-danger { background: var(--danger); }
         .btn-outline { background: transparent; border: 2px solid var(--primary); color: var(--primary); }
         
         .search-container { display: flex; gap: 10px; margin-bottom: 20px; }
@@ -32,30 +32,20 @@
 
         .mat-grid { display: grid; grid-template-columns: 2fr 1fr 1fr; gap: 8px; margin-bottom: 10px; }
 
-        /* --- CORREÇÃO CRÍTICA DO PDF --- */
-        #print-area { 
-            position: absolute; 
-            left: -9999px; 
-            top: 0; 
-        }
+        /* --- ESTILO PDF --- */
+        #print-area { position: absolute; left: -9999px; top: 0; }
         .pdf-content { 
-            width: 210mm; 
-            height: 297mm; 
-            padding: 10mm 15mm; 
-            background: white; 
-            color: black; 
-            font-family: Arial, sans-serif; 
-            box-sizing: border-box;
-            display: block;
+            width: 210mm; height: 297mm; padding: 10mm 15mm; background: white; color: black; 
+            font-family: Arial, sans-serif; box-sizing: border-box; display: flex; flex-direction: column;
         }
-        .pdf-header { text-align: center; border-bottom: 2px solid #000; margin-bottom: 10px; padding: 0; }
-        .pdf-header h1 { margin: 0; font-size: 26pt; color: #004a8d; font-weight: bold; padding: 0; line-height: 1.2; }
-        .pdf-header p { margin: 5px 0; font-size: 12pt; font-weight: bold; text-transform: uppercase; color: #333; }
+        .pdf-header { text-align: center; border-bottom: 2px solid #000; margin-bottom: 10px; }
+        .pdf-header h1 { margin: 0; font-size: 26pt; color: #004a8d; font-weight: bold; }
+        .pdf-header p { margin: 5px 0; font-size: 11pt; font-weight: bold; text-transform: uppercase; }
         
         .pdf-info { display: flex; flex-wrap: wrap; font-size: 11pt; border-bottom: 1px solid #000; padding: 10px 0; margin-bottom: 15px; }
         .pdf-info div { width: 50%; margin-bottom: 5px; }
 
-        .pdf-body { display: flex; justify-content: space-between; gap: 20px; font-size: 10pt; line-height: 1.4; }
+        .pdf-body { display: flex; justify-content: space-between; gap: 20px; font-size: 10pt; line-height: 1.4; flex-grow: 1; }
         .pdf-col-left { width: 62%; }
         .pdf-col-right { width: 36%; }
         
@@ -65,7 +55,9 @@
 
         .pdf-table { width: 100%; border-collapse: collapse; margin-top: 15px; font-size: 10pt; }
         .pdf-table th, .pdf-table td { border: 1px solid #ccc; padding: 8px; text-align: left; }
-        .pdf-table th { background: #333; color: white; }
+        .pdf-table th { background: #f2f2f2; }
+
+        .pdf-footer { text-align: center; font-size: 11pt; margin-top: auto; padding-bottom: 10mm; }
     </style>
 </head>
 <body>
@@ -98,6 +90,7 @@
         <div id="fields-orcamento">
             <label>Escopo do Trabalho</label><textarea id="f-escopo" rows="6"></textarea>
             <label>Diferencial e Garantia</label><textarea id="f-garantia" rows="3"></textarea>
+            <label>Tempo de Serviço</label><input type="text" id="f-tempo" placeholder="Ex: 2 dias úteis">
             <label>Valor da Mão de Obra (R$)</label><input type="number" id="f-mao-obra">
             <label>Valor Total da Empreitada (Materiais + Mão de Obra) (R$)</label><input type="number" id="f-empreitada">
         </div>
@@ -109,6 +102,7 @@
 
         <button class="btn" onclick="saveData()">💾 Salvar no iPhone</button>
         <button class="btn btn-accent" id="btn-pdf" style="display:none;" onclick="exportPDF()">📄 Gerar PDF Profissional</button>
+        <button class="btn btn-danger" id="btn-delete" style="display:none;" onclick="deleteEntry()">🗑️ Excluir Registro</button>
         <button class="btn btn-outline" onclick="showScreen('screen-home')">Voltar</button>
     </div>
 </div>
@@ -126,9 +120,8 @@
             <div><strong>OS Nº:</strong> <span id="p-os-num"></span></div>
         </div>
         <div id="p-corpo"></div>
-        <div style="margin-top: 30px; font-size: 10pt; line-height: 1.5;">
-            Agradecemos a oportunidade e ficamos à disposição para esclarecimentos.<br>
-            Atenciosamente, <strong>Higor Servelo</strong>.
+        <div class="pdf-footer">
+            Atenciosamente,<br><strong>Higor Servelo</strong>
         </div>
     </div>
 </div>
@@ -146,12 +139,13 @@
     function openNewOS() {
         currentId = null;
         document.getElementById('os-number-display').innerText = db.lastOS + 1;
-        document.getElementById('f-data-os').valueAsDate = new Date();
         document.getElementById('btn-pdf').style.display = 'none';
+        document.getElementById('btn-delete').style.display = 'none';
         document.getElementById('f-cliente').value = '';
         document.getElementById('f-endereco').value = '';
         document.getElementById('f-escopo').value = '';
         document.getElementById('f-garantia').value = '';
+        document.getElementById('f-tempo').value = '';
         document.getElementById('f-mao-obra').value = '';
         document.getElementById('f-empreitada').value = '';
         document.getElementById('mat-container').innerHTML = '';
@@ -173,23 +167,21 @@
     }
 
     function saveData() {
-        const dataVal = document.getElementById('f-data-os').value;
         const entry = {
             id: currentId || Date.now(),
             osNum: currentId ? document.getElementById('os-number-display').innerText : ++db.lastOS,
             cliente: document.getElementById('f-cliente').value,
             endereco: document.getElementById('f-endereco').value,
-            data: dataVal.split('-').reverse().join('/'),
-            dataRaw: dataVal,
+            dataRaw: document.getElementById('f-data-os').value,
+            data: document.getElementById('f-data-os').value.split('-').reverse().join('/'),
             tipo: document.getElementById('f-tipo').value,
             escopo: document.getElementById('f-escopo').value,
             garantia: document.getElementById('f-garantia').value,
+            tempo: document.getElementById('f-tempo').value,
             maoObra: document.getElementById('f-mao-obra').value,
             empreitada: document.getElementById('f-empreitada').value,
             materiais: Array.from(document.querySelectorAll('.mat-grid')).map(row => ({
-                d: row.querySelector('.m-d').value,
-                q: row.querySelector('.m-q').value,
-                v: row.querySelector('.m-v').value
+                d: row.querySelector('.m-d').value, q: row.querySelector('.m-q').value, v: row.querySelector('.m-v').value
             })).filter(m => m.d)
         };
         if(currentId) db.entries = db.entries.map(e => e.id === currentId ? entry : e);
@@ -197,6 +189,16 @@
         localStorage.setItem('hs_database', JSON.stringify(db));
         alert("Salvo com sucesso!");
         showScreen('screen-home');
+    }
+
+    function deleteEntry() {
+        const e = db.entries.find(entry => entry.id === currentId);
+        const tipoNome = e.tipo === 'orcamento' ? 'o orçamento' : 'a lista de materiais';
+        if(confirm(`Tem certeza que deseja excluir ${tipoNome} "${e.cliente}"?`)) {
+            db.entries = db.entries.filter(entry => entry.id !== currentId);
+            localStorage.setItem('hs_database', JSON.stringify(db));
+            showScreen('screen-home');
+        }
     }
 
     function renderList(filter = '') {
@@ -223,6 +225,7 @@
         document.getElementById('f-tipo').value = e.tipo;
         document.getElementById('f-escopo').value = e.escopo;
         document.getElementById('f-garantia').value = e.garantia;
+        document.getElementById('f-tempo').value = e.tempo || '';
         document.getElementById('f-mao-obra').value = e.maoObra;
         document.getElementById('f-empreitada').value = e.empreitada;
         const mc = document.getElementById('mat-container'); mc.innerHTML = '';
@@ -231,9 +234,9 @@
             div.innerHTML = `<input type="text" value="${m.d}" class="m-d"><input type="number" value="${m.q}" class="m-q"><input type="number" value="${m.v}" class="m-v">`;
             mc.appendChild(div);
         });
-        if(e.materiais.length === 0) addMaterialRow();
         toggleFormFields();
         document.getElementById('btn-pdf').style.display = 'block';
+        document.getElementById('btn-delete').style.display = 'block';
         showScreen('screen-os-form');
     }
 
@@ -244,26 +247,22 @@
         document.getElementById('p-endereco').innerText = e.endereco;
         document.getElementById('p-os-num').innerText = e.osNum;
 
-        let htmlContent = '';
+        let html = '';
         if(e.tipo === 'orcamento') {
             document.getElementById('pdf-tipo-txt').innerText = "PROPOSTA DE SERVIÇO DE MANUTENÇÃO E INSTALAÇÃO ELÉTRICA ESPECIALIZADA";
-            const escopo = e.escopo.split('\n').filter(l => l.trim() !== '').map(l => `<li>${l}</li>`).join('');
-            const garantia = e.garantia.split('\n').filter(l => l.trim() !== '').map(l => `<li>${l}</li>`).join('');
-            const vMo = parseFloat(e.maoObra || 0).toLocaleString('pt-BR', {minimumFractionDigits: 2});
-            const vEm = parseFloat(e.empreitada || 0).toLocaleString('pt-BR', {minimumFractionDigits: 2});
-
-            htmlContent = `
+            html = `
             <div class="pdf-body">
                 <div class="pdf-col-left">
-                    <div class="pdf-section-title">Escopo do Trabalho:</div><ul>${escopo}</ul>
+                    <div class="pdf-section-title">Escopo do Trabalho:</div><ul>${e.escopo.split('\n').map(l => `<li>${l}</li>`).join('')}</ul>
                     <div class="pdf-section-title">Responsável Técnico:</div><ul><li>Nome do Responsável: <strong>Higor Servelo</strong></li></ul>
+                    <div class="pdf-section-title">Tempo de Serviço:</div><ul><li>Previsão de execução: <strong>${e.tempo}</strong></li></ul>
                 </div>
                 <div class="pdf-col-right">
-                    <div class="pdf-section-title">Diferencial e Garantia:</div><ul>${garantia}</ul>
+                    <div class="pdf-section-title">Diferencial e Garantia:</div><ul>${e.garantia.split('\n').map(l => `<li>${l}</li>`).join('')}</ul>
                     <div class="pdf-section-title">Investimento:</div>
                     <ul style="list-style:none; padding:0;">
-                        <li><strong>Valor da mão de obra: R$ ${vMo}</strong></li>
-                        <li style="margin-top:10px;">Nota: Valor referente à mão de obra. O custo total de <strong>empreitada</strong> (materiais e mão de obra) é de <strong>R$ ${vEm}</strong>.</li>
+                        <li><strong>Valor da mão de obra: R$ ${parseFloat(e.maoObra || 0).toLocaleString('pt-BR', {minimumFractionDigits: 2})}</strong></li>
+                        <li style="margin-top:10px;">Nota: Valor referente à mão de obra. O custo total de <strong>empreitada</strong> (materiais e mão de obra) é de <strong>R$ ${parseFloat(e.empreitada || 0).toLocaleString('pt-BR', {minimumFractionDigits: 2})}</strong>.</li>
                         <li style="margin-top:10px;">Pagamento: 50% de sinal e 50% na entrega.</li>
                     </ul>
                 </div>
@@ -275,23 +274,13 @@
                 let sub = m.q * m.v; total += sub;
                 rows += `<tr><td>${m.d}</td><td>${m.q} unid.</td><td>R$ ${parseFloat(m.v).toFixed(2).replace('.',',')}</td><td>R$ ${sub.toFixed(2).replace('.',',')}</td></tr>`;
             });
-            htmlContent = `<table class="pdf-table"><thead><tr><th>Descrição do Material</th><th>Qtd</th><th>Unit.</th><th>Total</th></tr></thead><tbody>${rows}</tbody><tfoot><tr style="font-weight:bold;"><td colspan="3" style="text-align:right">TOTAL ESTIMADO</td><td>R$ ${total.toFixed(2).replace('.',',')}</td></tr></tfoot></table>`;
+            html = `<table class="pdf-table"><thead><tr><th>Descrição</th><th>Qtd</th><th>Unit.</th><th>Total</th></tr></thead><tbody>${rows}</tbody><tfoot><tr style="font-weight:bold;"><td colspan="3" style="text-align:right">TOTAL ESTIMADO</td><td>R$ ${total.toFixed(2).replace('.',',')}</td></tr></tfoot></table>`;
         }
-        document.getElementById('p-corpo').innerHTML = htmlContent;
+        document.getElementById('p-corpo').innerHTML = html;
         
-        // --- CONFIGURAÇÃO DE RENDERIZAÇÃO BLINDADA ---
-        const element = document.getElementById('pdf-template');
-        const opt = { 
-            margin: 0, 
-            filename: `OS_${e.osNum}.pdf`, 
-            image: { type: 'jpeg', quality: 0.98 }, 
-            html2canvas: { scale: 3, useCORS: true, letterRendering: true, y: 0, scrollY: 0 }, 
-            jsPDF: { unit: 'mm', format: 'a4', orientation: 'portrait' } 
-        };
-        
-        html2pdf().from(element).set(opt).save();
+        const opt = { margin: 0, filename: `OS_${e.osNum}.pdf`, html2canvas: { scale: 3, y: 0, scrollY: 0 }, jsPDF: { unit: 'mm', format: 'a4', orientation: 'portrait' } };
+        html2pdf().from(document.getElementById('pdf-template')).set(opt).save();
     }
-    renderList();
 </script>
 </body>
 </html>
