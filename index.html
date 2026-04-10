@@ -3,216 +3,357 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>HS - Manutenção Elétrica</title>
+    <title>HS - Gestão e Orçamentos</title>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/html2pdf.js/0.10.1/html2pdf.bundle.min.js"></script>
     <style>
-        :root { --primary: #004a8d; --secondary: #333; --bg: #f0f2f5; }
-        body { font-family: 'Segoe UI', Arial, sans-serif; background: var(--bg); margin: 0; padding: 0; }
-        .container { max-width: 800px; margin: 0 auto; padding: 20px; }
-        .card { background: white; padding: 30px; border-radius: 12px; box-shadow: 0 4px 15px rgba(0,0,0,0.1); text-align: center; }
+        :root { --primary: #004a8d; --accent: #ff9800; --bg: #f4f7f6; --text: #333; --border: #ccd; }
+        body { font-family: 'Segoe UI', system-ui, sans-serif; background: var(--bg); color: var(--text); margin: 0; padding: 0; }
+        .container { max-width: 950px; margin: 0 auto; padding: 15px; }
         
-        h1 { color: var(--primary); letter-spacing: 2px; }
-        .btn { background: var(--primary); color: white; border: none; padding: 15px 25px; border-radius: 8px; cursor: pointer; font-size: 16px; font-weight: bold; margin: 10px; transition: 0.3s; }
-        .btn:hover { opacity: 0.8; transform: translateY(-2px); }
-        .btn-sec { background: #555; }
+        /* UI Elements */
+        .card { background: white; padding: 20px; border-radius: 15px; box-shadow: 0 4px 15px rgba(0,0,0,0.1); margin-bottom: 20px; border: 1px solid #e0e0e0; }
+        h1, h2 { color: var(--primary); text-align: center; }
+        .btn { background: var(--primary); color: white; border: none; padding: 12px 20px; border-radius: 8px; cursor: pointer; font-weight: bold; width: 100%; margin: 5px 0; font-size: 16px; transition: 0.3s; }
+        .btn:hover { opacity: 0.8; transform: translateY(-1px); }
+        .btn-accent { background: var(--accent); }
+        .btn-outline { background: transparent; border: 2px solid var(--primary); color: var(--primary); }
         
-        input, textarea { width: 100%; padding: 12px; margin: 10px 0; border: 1px solid #ddd; border-radius: 6px; box-sizing: border-box; }
-        .screen { display: none; animation: fadeIn 0.4s; }
+        input, textarea, select { width: 100%; padding: 12px; margin: 8px 0; border: 1px solid #ddd; border-radius: 8px; box-sizing: border-box; font-size: 16px; }
+        .search-box { position: sticky; top: 10px; z-index: 100; }
+        
+        /* Navigation */
+        .screen { display: none; animation: slideUp 0.3s ease-out; }
         .active { display: block; }
+        @keyframes slideUp { from { transform: translateY(20px); opacity: 0; } to { transform: translateY(0); opacity: 1; } }
 
-        /* Estilo para as Tabelas de Materiais no Formulário */
-        .item-row { display: grid; grid-template-columns: 3fr 1fr 1fr; gap: 10px; margin-bottom: 5px; }
+        /* List Items */
+        .list-item { background: #fff; border-left: 5px solid var(--primary); padding: 15px; margin: 10px 0; border-radius: 8px; cursor: pointer; display: flex; justify-content: space-between; align-items: center; box-shadow: 0 2px 8px rgba(0,0,0,0.06); }
+        .os-badge { background: #eee; padding: 4px 8px; border-radius: 4px; font-size: 12px; font-weight: bold; }
 
-        @keyframes fadeIn { from { opacity: 0; } to { opacity: 1; } }
+        /* Grid for Materials */
+        .mat-grid { display: grid; grid-template-columns: 2fr 1fr 1fr; gap: 8px; align-items: center; margin-bottom: 10px; }
 
-        /* Modelos de Impressão (Escondidos na tela) */
+        /* Print Hidden Area */
         #print-area { display: none; }
-        .print-page { width: 210mm; padding: 15mm; background: white; color: black; text-align: left; }
-        .header-print { border-bottom: 2px solid var(--primary); margin-bottom: 20px; padding-bottom: 10px; text-align: center; }
-        table { width: 100%; border-collapse: collapse; }
-        th { background: #444; color: white; padding: 8px; }
-        td { border-bottom: 1px solid #eee; padding: 8px; }
+        .print-page { width: 210mm; padding: 15mm; background: white; color: black; font-family: 'Arial', sans-serif; box-sizing: border-box; }
+        .print-header { text-align: center; border-bottom: 1px solid #000; margin-bottom: 10px; }
+        .print-header h1 { margin: 0; font-size: 26pt; color: #004a8d; font-weight: bold; }
+        .print-header p { margin: 5px 0; font-size: 14pt; }
+        .p-info-block { display: flex; flex-wrap: wrap; font-size: 11pt; margin-bottom: 15px; line-height: 1.4; border-bottom: 1px solid #000; padding-bottom: 10px; }
+        .p-info-block div { width: 49%; }
+
+        .print-body { display: flex; justify-content: space-between; gap: 20px; font-size: 10.5pt; line-height: 1.5; margin-bottom: 20px; }
+        .left-col { width: 63%; }
+        .right-col { width: 35%; }
+        .print-body h3 { font-size: 11.5pt; font-weight: bold; margin-bottom: 5px; margin-top: 15px; border-bottom: 1px solid #ddd; padding-bottom: 3px; color: #000; }
+        .print-body ul { padding-left: 15px; margin-top: 0; margin-bottom: 10px; list-style-type: disc; }
+        .print-body li { margin-bottom: 5px; }
+        .print-body .sub-title { font-weight: bold; font-size: 10.5pt; text-transform: uppercase; margin-top: 15px; color: #000; }
+
+        .inv-tabela { border-collapse: collapse; width: 100%; border: 1px solid #ddd; margin-top: 5px; margin-bottom: 15px;}
+        .inv-tabela th, .inv-tabela td { border: 1px solid #ddd; padding: 6px; text-align: left;}
+        .inv-tabela th { background-color: #f2f2f2; font-weight: bold;}
     </style>
 </head>
 <body>
 
 <div class="container">
-    <div id="screen-home" class="screen active card">
-        <h1>HS - MANUTENÇÃO ELÉTRICA</h1>
-        <br>
-        <button class="btn" onclick="showScreen('screen-client-form')">Criar Ordem de Serviço</button>
-        <button class="btn btn-sec" onclick="alert('Funcionalidade de buscar clientes antigos em breve!')">Meus Clientes</button>
+    
+    <div id="screen-home" class="screen active">
+        <h1>HS - GESTÃO & ORÇAMENTOS</h1>
+        <div class="card search-box">
+            <input type="text" id="main-search" placeholder="🔍 Pesquisar cliente ou Nº da OS..." onkeyup="filterClients()">
+        </div>
+        <button class="btn" onclick="openNewOS()">+ Criar Nova Ordem de Serviço</button>
+        <div id="client-list-container">
+            </div>
     </div>
 
-    <div id="screen-client-form" class="screen card">
-        <h2>Novo Cliente</h2>
-        <input type="text" id="cli-nome" placeholder="Nome do Cliente">
-        <input type="text" id="cli-end" placeholder="Endereço Completo">
-        <input type="text" id="cli-resp" placeholder="Responsável">
-        <button class="btn" onclick="saveClient()">Salvar Cliente</button>
-        <button class="btn btn-sec" onclick="showScreen('screen-home')">Voltar</button>
-    </div>
-
-    <div id="screen-project" class="screen card">
-        <h2 id="view-cli-nome">Projeto: Cliente</h2>
-        <p id="view-cli-end"></p>
+    <div id="screen-os-form" class="screen card">
+        <h2 id="form-title">Nova Ordem de Serviço</h2>
+        <div style="text-align: right; margin-bottom: 10px;">
+            <span class="os-badge">OS Nº: <span id="os-number-display">0000</span></span>
+        </div>
+        
+        <input type="text" id="f-cliente" placeholder="Nome do Cliente (Ex: Quintal Roofotp)">
+        <input type="text" id="f-endereco" placeholder="Endereço (Ex: Rua Euclides Pacheco 233...)">
+        <input type="text" id="f-responsavel" placeholder="Responsável Técnico" value="Higor Servelo">
+        <input type="date" id="f-data-os" placeholder="Data de Elaboração" value="">
+        
         <hr>
-        <div style="display: flex; justify-content: center; gap: 20px;">
-            <div>
-                <button class="btn" onclick="showScreen('screen-budget-form')">Criar Orçamento</button>
-            </div>
-            <div>
-                <button class="btn" onclick="showScreen('screen-material-form')">Lista de Materiais</button>
-            </div>
+        <h3>Tipo de Documento</h3>
+        <select id="f-tipo" onchange="toggleFormFields()">
+            <option value="orcamento">Proposta de Orçamento</option>
+            <option value="lista">Lista de Materiais</option>
+        </select>
+
+        <div id="fields-orcamento">
+            <textarea id="f-escopo" rows="6" placeholder="Escopo do Trabalho (um tópico por linha, sem '-' ou '•'). AI pré-populada com exemplos:"></textarea>
+            <textarea id="f-garantia" rows="3" placeholder="Diferenciais e Garantia (um tópico por linha)..."></textarea>
+            <input type="number" id="f-mao-obra" placeholder="Valor Mão de Obra e Locomoção (R$)">
+            <input type="number" id="f-empreitada" placeholder="Valor Total Empreitada (Materiais + Mão de Obra) (R$) (Opcional)">
         </div>
-        <br>
-        <button class="btn btn-sec" onclick="showScreen('screen-home')">Finalizar e Sair</button>
+
+        <div id="fields-lista" style="display:none;">
+            <div id="mat-container">
+                <div class="mat-grid">
+                    <input type="text" placeholder="Material (Ex: Fita LED 3000K)" class="m-desc">
+                    <input type="number" placeholder="Qtd" class="m-qtd">
+                    <input type="number" placeholder="V. Unit" class="m-val">
+                </div>
+            </div>
+            <button class="btn btn-outline" onclick="addMaterialRow()">+ Adicionar Item à Lista</button>
+        </div>
+
+        <button class="btn" onclick="saveData()">💾 Salvar OS no iPhone</button>
+        <button class="btn btn-accent" id="btn-pdf" style="display:none;" onclick="exportPDF()">📄 Gerar PDF Profissional</button>
+        <button class="btn btn-outline" onclick="showScreen('screen-home')">Voltar à Página Inicial</button>
     </div>
 
-    <div id="screen-budget-form" class="screen card">
-        <h2>Criar Orçamento Profissional</h2>
-        <textarea id="orc-escopo" rows="4" placeholder="Escopo do Trabalho (Ex: Instalação de painéis...)"></textarea>
-        <textarea id="orc-garantia" rows="3" placeholder="Diferencial e Garantia"></textarea>
-        <input type="number" id="orc-mo" placeholder="Valor Mão de Obra (R$)">
-        <button class="btn" onclick="saveBudget()">Salvar Orçamento</button>
-        <button class="btn btn-sec" onclick="generatePDF('orcamento')">Gerar Orçamento em PDF</button>
-        <button class="btn btn-sec" onclick="showScreen('screen-project')">Voltar</button>
-    </div>
-
-    <div id="screen-material-form" class="screen card">
-        <h2>Criar Lista de Materiais</h2>
-        <div id="material-inputs">
-            <div class="item-row">
-                <input type="text" placeholder="Material" class="mat-desc">
-                <input type="number" placeholder="Qtd" class="mat-qtd">
-                <input type="number" placeholder="Preço" class="mat-val">
-            </div>
-        </div>
-        <button class="btn btn-sec" onclick="addMaterialRow()">+ Adicionar Item</button>
-        <br><br>
-        <button class="btn" onclick="saveMaterials()">Salvar Lista</button>
-        <button class="btn btn-sec" onclick="generatePDF('lista')">Gerar PDF da Lista</button>
-        <button class="btn btn-sec" onclick="showScreen('screen-project')">Voltar</button>
-    </div>
 </div>
 
 <div id="print-area">
     <div id="pdf-template" class="print-page">
-        <div class="header-print">
-            <h1 id="pdf-h1">HS MANUTENÇÃO ELÉTRICA</h1>
-            <strong id="pdf-tipo">DOCUMENTO</strong>
+        <div class="print-header">
+            <h1>HS MANUTENÇÃO ELÉTRICA</h1>
+            <p id="pdf-tipo-title">PROPOSTA DE SERVIÇO</p>
         </div>
-        <p><strong>Cliente:</strong> <span id="pdf-cliente"></span></p>
-        <p><strong>Endereço:</strong> <span id="pdf-endereco"></span></p>
-        <p><strong>Responsável:</strong> <span id="pdf-responsavel"></span></p>
-        <hr>
-        <div id="pdf-content"></div>
+        <div class="p-info-block">
+            <div><strong>Cliente:</strong> <span id="p-cliente"></span></div>
+            <div><strong>Data:</strong> <span id="p-data"></span></div>
+            <div><strong>Endereço:</strong> <span id="p-endereco"></span></div>
+            <div style="width: 100%;"><strong>OS Nº:</strong> <span id="pdf-os-num"></span></div>
+        </div>
+        <div id="p-conteudo"></div>
     </div>
 </div>
 
 <script>
-    let currentClient = {};
+    let db = JSON.parse(localStorage.getItem('hs_database')) || { lastOS: 1000, entries: [] };
+    let currentEditingId = null;
+
+    // Set initial date to today
+    document.getElementById('f-data-os').valueAsDate = new Date();
 
     function showScreen(id) {
         document.querySelectorAll('.screen').forEach(s => s.classList.remove('active'));
         document.getElementById(id).classList.add('active');
-        window.scrollTo(0,0);
+        if(id === 'screen-home') renderList();
     }
 
-    function saveClient() {
-        currentClient = {
-            nome: document.getElementById('cli-nome').value,
-            endereco: document.getElementById('cli-end').value,
-            responsavel: document.getElementById('cli-resp').value,
-            orcamento: {},
-            materiais: []
-        };
-        
-        if(!currentClient.nome) return alert("Digite o nome do cliente");
+    function openNewOS() {
+        currentEditingId = null;
+        document.getElementById('form-title').innerText = "Nova Ordem de Serviço";
+        document.getElementById('os-number-display').innerText = db.lastOS + 1;
+        document.getElementById('btn-pdf').style.display = 'none';
+        clearForm();
+        showScreen('screen-os-form');
+    }
 
-        document.getElementById('view-cli-nome').innerText = "Cliente: " + currentClient.nome;
-        document.getElementById('view-cli-end').innerText = currentClient.endereco;
-        
-        // Simulação de salvar no "banco de dados" do navegador
-        localStorage.setItem('last_client', JSON.stringify(currentClient));
-        
-        showScreen('screen-project');
+    function clearForm() {
+        document.getElementById('f-cliente').value = '';
+        document.getElementById('f-endereco').value = '';
+        document.getElementById('f-responsavel').value = 'Higor Servelo';
+        document.getElementById('f-data-os').valueAsDate = new Date();
+        document.getElementById('f-tipo').value = 'orcamento';
+        document.getElementById('fields-orcamento').style.display = 'block';
+        document.getElementById('fields-lista').style.display = 'none';
+
+        // AI Pré-populada para exemplo
+        document.getElementById('f-escopo').value = "Substituição de 2 lâmpadas LED e reparos menores no banheiro feminino.\nReparo e substituição de duas fontes de LED (letreiro e espelho) em forro de drywall com acesso restrito.\nSubstituição de 2 spots LED de sobrepor no corredor de circulação.\nInstalação completa de dois pontos de iluminação com arandela na parede debaixo da escada, utilizando lâmpadas convencionais rosca e27.\nRevisão e reparo técnico de 4 fritadeiras elétricas industriais.\nTempo de Execução: 2 dias inteiros de serviço (com ajuste de horário para não interferir na operação do bar).";
+        document.getElementById('f-garantia').value = "Conformidade com normas NBR 5410.\nUso de conectores de precisão e isolamento de alta durabilidade.\nSistema de aterramento verificado e garantia de segurança rigorosa.";
+        document.getElementById('f-mao-obra').value = '1300';
+        document.getElementById('f-empreitada').value = '2950';
+
+        document.getElementById('mat-container').innerHTML = `<div class="mat-grid"><input type="text" placeholder="Material" class="m-desc"><input type="number" placeholder="Qtd" class="m-qtd"><input type="number" placeholder="V. Unit" class="m-val"></div>`;
+    }
+
+    function toggleFormFields() {
+        const tipo = document.getElementById('f-tipo').value;
+        document.getElementById('fields-orcamento').style.display = tipo === 'orcamento' ? 'block' : 'none';
+        document.getElementById('fields-lista').style.display = tipo === 'lista' ? 'block' : 'none';
     }
 
     function addMaterialRow() {
         const div = document.createElement('div');
-        div.className = 'item-row';
-        div.innerHTML = `<input type="text" placeholder="Material" class="mat-desc">
-                         <input type="number" placeholder="Qtd" class="mat-qtd">
-                         <input type="number" placeholder="Preço" class="mat-val">`;
-        document.getElementById('material-inputs').appendChild(div);
+        div.className = 'mat-grid';
+        div.innerHTML = `<input type="text" placeholder="Material" class="m-desc"><input type="number" placeholder="Qtd" class="m-qtd"><input type="number" placeholder="V. Unit" class="m-val">`;
+        document.getElementById('mat-container').appendChild(div);
     }
 
-    function saveMaterials() {
-        const rows = document.querySelectorAll('.item-row');
-        currentClient.materiais = [];
-        rows.forEach(row => {
-            const desc = row.querySelector('.mat-desc').value;
-            if(desc) {
-                currentClient.materiais.push({
-                    desc: desc,
-                    qtd: row.querySelector('.mat-qtd').value || 0,
-                    val: row.querySelector('.mat-val').value || 0
-                });
-            }
+    function saveData() {
+        const tipo = document.getElementById('f-tipo').value;
+        const dataStr = document.getElementById('f-data-os').value;
+        const [year, month, day] = dataStr.split('-');
+        const dataFormatada = `${day}/${month}/${year}`;
+
+        let materials = [];
+        document.querySelectorAll('.mat-grid').forEach(row => {
+            const desc = row.querySelector('.m-desc').value;
+            if(desc) materials.push({ desc, qtd: row.querySelector('.m-qtd').value, val: row.querySelector('.m-val').value });
         });
-        alert("Lista de materiais salva no projeto!");
-    }
 
-    function saveBudget() {
-        currentClient.orcamento = {
-            escopo: document.getElementById('orc-escopo').value,
-            garantia: document.getElementById('orc-garantia').value,
-            mo: document.getElementById('orc-mo').value
+        const entry = {
+            id: currentEditingId || Date.now(),
+            osNum: currentEditingId ? document.getElementById('os-number-display').innerText : ++db.lastOS,
+            cliente: document.getElementById('f-cliente').value,
+            endereco: document.getElementById('f-endereco').value,
+            responsavel: document.getElementById('f-responsavel').value,
+            tipo: tipo,
+            escopo: document.getElementById('f-escopo').value,
+            garantia: document.getElementById('f-garantia').value,
+            maoObra: document.getElementById('f-mao-obra').value,
+            empreitada: document.getElementById('f-empreitada').value,
+            materiais: materials,
+            dataForm: dataFormatada,
+            dataObj: dataStr
         };
-        alert("Orçamento salvo no projeto!");
-    }
 
-    function generatePDF(tipo) {
-        const content = document.getElementById('pdf-content');
-        document.getElementById('pdf-cliente').innerText = currentClient.nome;
-        document.getElementById('pdf-endereco').innerText = currentClient.endereco;
-        document.getElementById('pdf-responsavel').innerText = currentClient.responsavel;
-
-        if(tipo === 'lista') {
-            document.getElementById('pdf-tipo').innerText = "LISTA DE MATERIAIS";
-            let html = `<table><thead><tr><th>Item</th><th>Qtd</th><th>Unit.</th><th>Total</th></tr></thead><tbody>`;
-            let totalGeral = 0;
-            currentClient.materiais.forEach((m, i) => {
-                let total = m.qtd * m.val;
-                totalGeral += total;
-                html += `<tr><td>${m.desc}</td><td>${m.qtd}</td><td>R$ ${m.val}</td><td>R$ ${total.toFixed(2)}</td></tr>`;
-            });
-            html += `</tbody></table><h3>TOTAL ESTIMADO: R$ ${totalGeral.toFixed(2)}</h3>`;
-            content.innerHTML = html;
+        if (currentEditingId) {
+            const index = db.entries.findIndex(e => e.id === currentEditingId);
+            db.entries[index] = entry;
         } else {
-            document.getElementById('pdf-tipo').innerText = "PROPOSTA DE SERVIÇO";
-            content.innerHTML = `
-                <h3>ESCOPO DO TRABALHO:</h3><p>${currentClient.orcamento.escopo || ''}</p>
-                <h3>DIFERENCIAL E GARANTIA:</h3><p>${currentClient.orcamento.garantia || ''}</p>
-                <hr>
-                <h3>INVESTIMENTO MÃO DE OBRA: R$ ${currentClient.orcamento.mo || '0,00'}</h3>
-            `;
+            db.entries.push(entry);
         }
 
+        localStorage.setItem('hs_database', JSON.stringify(db));
+        alert("OS salva com sucesso no seu iPhone!");
+        showScreen('screen-home');
+    }
+
+    function renderList(filter = '') {
+        const container = document.getElementById('client-list-container');
+        container.innerHTML = '';
+        
+        const filtered = db.entries.filter(e => 
+            (e.cliente || '').toLowerCase().includes(filter.toLowerCase()) || 
+            (e.osNum || '').toString().includes(filter)
+        ).reverse();
+
+        filtered.forEach(e => {
+            const div = document.createElement('div');
+            div.className = 'list-item';
+            div.onclick = () => editEntry(e.id);
+            div.innerHTML = `
+                <div>
+                    <strong>${e.cliente || 'SEM NOME'}</strong><br>
+                    <small>${e.tipo.toUpperCase()} - ${e.dataForm}</small>
+                </div>
+                <span class="os-badge">OS ${e.osNum}</span>
+            `;
+            container.appendChild(div);
+        });
+    }
+
+    function filterClients() {
+        renderList(document.getElementById('main-search').value);
+    }
+
+    function editEntry(id) {
+        const e = db.entries.find(entry => entry.id === id);
+        currentEditingId = id;
+        
+        document.getElementById('form-title').innerText = "Editar Ordem de Serviço";
+        document.getElementById('os-number-display').innerText = e.osNum;
+        document.getElementById('f-cliente').value = e.cliente;
+        document.getElementById('f-endereco').value = e.endereco;
+        document.getElementById('f-responsavel').value = e.responsavel || 'Higor Servelo';
+        document.getElementById('f-data-os').value = e.dataObj;
+        document.getElementById('f-tipo').value = e.tipo;
+        document.getElementById('f-escopo').value = e.escopo || '';
+        document.getElementById('f-garantia').value = e.garantia || '';
+        document.getElementById('f-mao-obra').value = e.maoObra || '';
+        document.getElementById('f-empreitada').value = e.empreitada || '';
+        
+        toggleFormFields();
+        
+        if(e.materiais.length > 0) {
+            const container = document.getElementById('mat-container');
+            container.innerHTML = '';
+            e.materiais.forEach(m => {
+                const div = document.createElement('div');
+                div.className = 'mat-grid';
+                div.innerHTML = `
+                    <input type="text" value="${m.desc}" class="m-desc">
+                    <input type="number" value="${m.qtd}" class="m-qtd">
+                    <input type="number" value="${m.val}" class="m-val">`;
+                container.appendChild(div);
+            });
+        }
+
+        document.getElementById('btn-pdf').style.display = 'block';
+        showScreen('screen-os-form');
+    }
+
+    function exportPDF() {
+        const e = db.entries.find(entry => entry.id === currentEditingId);
+        document.getElementById('p-cliente').innerText = e.cliente;
+        document.getElementById('p-endereco').innerText = e.endereco;
+        document.getElementById('p-data').innerText = e.dataForm;
+        document.getElementById('pdf-os-num').innerText = e.osNum;
+
+        let contentHtml = '';
+        if(e.tipo === 'orcamento') {
+            document.getElementById('pdf-tipo-title').innerText = "PROPOSTA DE SERVIÇO DE MANUTENÇÃO E INSTALAÇÃO ELÉTRICA ESPECIALIZADA";
+            const escopoBullets = (e.escopo || '').split('\n').filter(b => b.trim() !== '').map(b => `<li>${b}</li>`).join('');
+            const garantiaBullets = (e.garantia || '').split('\n').filter(b => b.trim() !== '').map(b => `<li>${b}</li>`).join('');
+
+            contentHtml = `
+                <div class="print-body">
+                    <div class="left-col">
+                        <div class="sub-title">ESCOPO DO TRABALHO:</div>
+                        <ul>${escopoBullets}</ul>
+                        <div class="sub-title">RESPONSÁVEL TÉCNICO:</div>
+                        <ul><li>Nome do Responsável: ${e.responsavel}</li></ul>
+                    </div>
+                    <div class="right-col">
+                        <div class="sub-title">DIFERENCIAL E GARANTIA:</div>
+                        <ul>${garantiaBullets}</ul>
+                        <div class="sub-title">INVESTIMENTO:</div>
+                        <ul>
+                            <li>Mão de Obra Especializada e Locomoção: R$ ${parseFloat(e.maoObra).toFixed(2).replace('.', ',')}</li>
+                            <li>Nota: Valor refere-se exclusivamente à mão de obra e custos de locomoção. Os materiais de alta qualidade são responsabilidade do cliente efetuar a compra, OU o valor total da empreitada, incluindo materiais, é de R$ ${parseFloat(e.empreitada || 0).toFixed(2).replace('.', ',')} para o projeto completo.</li>
+                            <li>Condições de Pagamento: Adiantamento de 50% do valor da mão de obra (R$ ${parseFloat(e.maoObra / 2).toFixed(2).replace('.', ',')}) OU 50% do valor total da empreitada (R$ ${parseFloat((e.empreitada || 0) / 2).toFixed(2).replace('.', ',')}) antes de iniciar o serviço. O restante será pago após finalização e aceitação.</li>
+                        </ul>
+                    </div>
+                </div>
+                <p style="font-size: 10.5pt; text-align: center; margin-top: 30px;">Agradecemos a oportunidade e ficamos à disposição para esclarecimentos.<br>Atenciosamente, Higor Servelo.</p>
+            `;
+        } else {
+            document.getElementById('pdf-tipo-title').innerText = "LISTA DE MATERIAIS ELÉTRICOS - ATUALIZADA";
+            contentHtml = `
+                <div style="font-size: 10.5pt;">
+                    <h3 style="margin-bottom: 5px; color: #000;">RESPONSÁVEL TÉCNICO: Higor Servelo</h3>
+                    <table class="inv-tabela"><thead><tr><th>Item/Descrição do Material</th><th>Qtd</th><th>Valor Unit.</th><th>Total (Estd.)</th></tr></thead><tbody>`;
+            let totalGeral = 0;
+            e.materiais.forEach((m, i) => {
+                let sub = m.qtd * m.val;
+                totalGeral += sub;
+                contentHtml += `<tr><td>${m.desc}</td><td>${m.qtd} unid.</td><td>R$ ${parseFloat(m.val).toFixed(2).replace('.', ',')}</td><td>R$ ${sub.toFixed(2).replace('.', ',')}</td></tr>`;
+            });
+            contentHtml += `</tbody><tfoot><tr style="font-weight:bold; background-color: #f2f2f2;"><td colspan="3" style="text-align:right">TOTAL ESTIMADO</td><td>R$ ${totalGeral.toFixed(2).replace('.', ',')}</td></tr></tfoot></table>
+                </div>
+                <p style="font-size: 10.5pt; text-align: center; margin-top: 30px;">Gerado por HS Manutenção Elétrica.</p>
+            `;
+        }
+        
+        document.getElementById('p-conteudo').innerHTML = contentHtml;
+        
         const element = document.getElementById('pdf-template');
         document.getElementById('print-area').style.display = 'block';
         
         html2pdf().from(element).set({
-            margin: 10,
-            filename: `${tipo}_${currentClient.nome}.pdf`,
-            html2canvas: { scale: 2 },
+            margin: 0,
+            filename: `OS_${e.osNum}_${e.cliente.replace(/\s+/g, '_')}.pdf`,
+            html2canvas: { scale: 3 },
             jsPDF: { unit: 'mm', format: 'a4', orientation: 'portrait' }
         }).save().then(() => {
             document.getElementById('print-area').style.display = 'none';
         });
     }
-</script>
 
+    // Inicialização
+    renderList();
+</script>
 </body>
 </html>
