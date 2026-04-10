@@ -38,7 +38,7 @@
 
         .mat-grid { display: grid; grid-template-columns: 2fr 1fr 1fr; gap: 8px; margin-bottom: 10px; }
 
-        /* --- ESTILO PDF (INTACTO) --- */
+        /* --- ESTILO PDF --- */
         #print-area { position: absolute; left: -9999px; top: 0; }
         .pdf-content { 
             width: 210mm; height: 297mm; padding: 10mm 15mm; background: white; color: black; 
@@ -168,31 +168,53 @@
     let db = JSON.parse(localStorage.getItem('hs_database')) || { lastOS: 1000, entries: [] };
     let currentId = null;
 
-    // GERENCIADOR DE TELAS E NAVEGAÇÃO
+    // INJEÇÃO AUTOMÁTICA DE DADOS INICIAIS
+    function injectInitialData() {
+        if(db.entries.length === 0) {
+            db.entries.push({
+                id: 1, osNum: 1001, cliente: "Quintal dos Amigos Lounge & Bar", endereco: "Rua Euclides Pacheco 233 - Tatuapé, São Paulo- SP",
+                dataRaw: "2026-04-09", data: "09/04/2026", tipo: "lista", escopo: "", garantia: "", tempo: "", maoObra: "", empreitada: "",
+                materiais: [
+                    {d: "Fonte Chaveada Slim 12V 20A (Letreiros/Espelho)", q: "2", v: "125.00"},
+                    {d: "Fonte Chaveada 12V 5A (Parede Viva)", q: "2", v: "45.00"},
+                    {d: "Spot LED Embutir 7W Direcionável (Corredor/Banheiro)", q: "4", v: "28.00"},
+                    {d: "Lâmpada LED Tubular T8 18W (Cozinha/Serviço)", q: "6", v: "22.00"},
+                    {d: "Plafon LED Sobrepor Quadrado 24W (Cozinha/Serviço)", q: "6", v: "48.00"},
+                    {d: "Arandela Interna Parede (Debaixo da Escada)", q: "2", v: "65.00"},
+                    {d: "Lâmpada LED Bulbo E27 9W (Para Arandela)", q: "2", v: "12.00"},
+                    {d: "Fita de Cobre Adesiva Condutora (Vitrine)", q: "1", v: "185.00"},
+                    {d: "Cabo Flexível 1,5mm² (Rolo 50m)", q: "1", v: "115.00"},
+                    {d: "Lâmpada LED Dicróica MR16 (Substituição Banheiro)", q: "2", v: "18.50"},
+                    {d: "Barramento LED Linear de Sobrepor (Teto)", q: "1", v: "134.90"},
+                    {d: "Materiais de Fixação (Buchas, Parafusos, Wago)", q: "1", v: "120.00"}
+                ]
+            });
+            db.entries.push({
+                id: 2, osNum: 1002, cliente: "Quintal Rooftop", endereco: "Rua Euclides Pacheco 233 - Tatuapé, São Paulo- SP",
+                dataRaw: "2026-04-09", data: "09/04/2026", tipo: "orcamento",
+                escopo: "Troca de 2 lâmpadas led no banheiro feminino;\nSubstituição de duas fontes de led letreiro e espelho no forro de drywall;\nInstalação de 2 spots led no corredor;\nTroca de 2 fontes de led letreiro na parede viva;\nInstalar dois pontos de arandela na parede debaixo da escada com lâmpada convencional;\nInstalação de dois spots led embutir no banheiro masculino;\nSubstituir barramento led de sobrepor no teto;\nReparo em 4 fritadeiras;\nSolucionar lâmpada que fica ligada por retorno de fase;\nSistema de fita de cobre condutora na vitrine de bebidas;\nTroca de 6 lâmpadas sobrepor e embutir na cozinha e área de serviços.",
+                garantia: "Garantia de 90 dias para os serviços executados conforme CDC.\nMão de obra técnica especializada em manutenção e infraestrutura.",
+                tempo: "Dois dias inteiros de serviço", maoObra: "1300", empreitada: "2950", materiais: []
+            });
+            db.lastOS = 1002;
+            localStorage.setItem('hs_database', JSON.stringify(db));
+        }
+    }
+    injectInitialData();
+
     function showScreen(id) {
-        // Oculta todas as telas
         document.querySelectorAll('.screen').forEach(s => s.classList.remove('active'));
-        // Remove destaque de todos os botões do menu
         document.querySelectorAll('.nav-btn').forEach(b => b.classList.remove('active-nav'));
-        
-        // Exibe a tela alvo
         document.getElementById(id).classList.add('active');
-        
-        // Destaca o botão correspondente no menu
         if(id === 'screen-home') { document.getElementById('nav-home').classList.add('active-nav'); renderHome(); }
         else if(id === 'screen-clientes') { document.getElementById('nav-clientes').classList.add('active-nav'); renderClientes(); }
         else if(id === 'screen-os-list') { document.getElementById('nav-os').classList.add('active-nav'); renderAllOS(); }
         else if(id === 'screen-orcamentos') { document.getElementById('nav-orcamentos').classList.add('active-nav'); renderOrcamentos(); }
     }
 
-    // GERA O HTML DOS ITENS DAS LISTAS COM A LIXEIRA
     function getListItemHTML(e) {
-        return `
-        <div class="list-item" onclick="editEntry(${e.id})">
-            <div style="flex-grow: 1;">
-                <strong>${e.cliente}</strong><br>
-                <small>${e.tipo.toUpperCase()} - ${e.data}</small>
-            </div>
+        return `<div class="list-item" onclick="editEntry(${e.id})">
+            <div style="flex-grow: 1;"><strong>${e.cliente}</strong><br><small>${e.tipo.toUpperCase()} - ${e.data}</small></div>
             <div style="display: flex; align-items: center; gap: 10px;">
                 <span class="os-badge">OS ${e.osNum}</span>
                 <button class="del-btn" onclick="event.stopPropagation(); deleteEntryById(${e.id})">🗑️</button>
@@ -200,59 +222,38 @@
         </div>`;
     }
 
-    // RENDERIZADORES DAS ABAS
     function renderHome(filter = '') {
-        const container = document.getElementById('home-list-container');
-        let filtered = db.entries;
-        if(filter) {
-            filtered = db.entries.filter(e => e.cliente.toLowerCase().includes(filter.toLowerCase()) || e.osNum.toString().includes(filter));
-        }
-        container.innerHTML = filtered.reverse().slice(0, 10).map(getListItemHTML).join('');
+        const c = document.getElementById('home-list-container');
+        let f = filter ? db.entries.filter(e => e.cliente.toLowerCase().includes(filter.toLowerCase()) || e.osNum.toString().includes(filter)) : db.entries;
+        c.innerHTML = f.slice().reverse().slice(0, 10).map(getListItemHTML).join('');
     }
 
     function filterHome() { renderHome(document.getElementById('main-search').value); }
-
-    function renderAllOS() {
-        document.getElementById('list-todas-os-container').innerHTML = db.entries.slice().reverse().map(getListItemHTML).join('');
-    }
-
-    function renderOrcamentos() {
-        const orcamentos = db.entries.filter(e => e.tipo === 'orcamento');
-        document.getElementById('list-orcamentos-container').innerHTML = orcamentos.reverse().map(getListItemHTML).join('');
-    }
-
+    function renderAllOS() { document.getElementById('list-todas-os-container').innerHTML = db.entries.slice().reverse().map(getListItemHTML).join(''); }
+    function renderOrcamentos() { document.getElementById('list-orcamentos-container').innerHTML = db.entries.filter(e => e.tipo === 'orcamento').reverse().map(getListItemHTML).join(''); }
+    
     function renderClientes() {
-        const clientesUnicos = [...new Set(db.entries.map(e => e.cliente))];
-        const container = document.getElementById('list-clientes-container');
-        container.innerHTML = clientesUnicos.map(cli => `
+        const cliUnicos = [...new Set(db.entries.map(e => e.cliente))];
+        document.getElementById('list-clientes-container').innerHTML = cliUnicos.map(cli => `
             <div class="list-item" onclick="openClienteDetalhes('${cli}')">
-                <strong style="font-size: 18px;">${cli}</strong>
-                <span style="color: var(--primary);">Ver Histórico ➔</span>
-            </div>
-        `).join('');
+                <strong style="font-size: 18px;">${cli}</strong><span style="color: var(--primary);">Ver Histórico ➔</span>
+            </div>`).join('');
     }
 
     function openClienteDetalhes(nome) {
         document.getElementById('detalhe-nome-cliente').innerText = nome;
         const e = db.entries.find(en => en.cliente === nome);
         document.getElementById('detalhe-end-cliente').innerText = e ? e.endereco : '';
-        const registros = db.entries.filter(en => en.cliente === nome);
-        document.getElementById('list-cliente-os').innerHTML = registros.reverse().map(getListItemHTML).join('');
-        
+        document.getElementById('list-cliente-os').innerHTML = db.entries.filter(en => en.cliente === nome).reverse().map(getListItemHTML).join('');
         document.querySelectorAll('.screen').forEach(s => s.classList.remove('active'));
         document.getElementById('screen-cliente-detalhes').classList.add('active');
     }
 
-    // LÓGICA DE EXCLUSÃO (LIXEIRA)
     function deleteEntryById(id) {
-        const e = db.entries.find(entry => entry.id === id);
-        if(!e) return;
-        const tipoNome = e.tipo === 'orcamento' ? 'o orçamento' : 'a lista de materiais';
-        if(confirm(`Tem certeza que deseja excluir ${tipoNome} da OS ${e.osNum} do cliente "${e.cliente}"?`)) {
-            db.entries = db.entries.filter(entry => entry.id !== id);
+        const e = db.entries.find(en => en.id === id);
+        if(confirm(`Tem certeza que deseja excluir ${e.tipo === 'orcamento' ? 'o orçamento' : 'a lista'} da OS ${e.osNum} do cliente "${e.cliente}"?`)) {
+            db.entries = db.entries.filter(en => en.id !== id);
             localStorage.setItem('hs_database', JSON.stringify(db));
-            
-            // Recarrega a tela que estiver ativa para refletir a exclusão
             if(document.getElementById('screen-home').classList.contains('active')) renderHome();
             if(document.getElementById('screen-os-list').classList.contains('active')) renderAllOS();
             if(document.getElementById('screen-orcamentos').classList.contains('active')) renderOrcamentos();
@@ -260,29 +261,18 @@
         }
     }
 
-    function deleteEntryFromForm() {
-        if(currentId) {
-            deleteEntryById(currentId);
-            showScreen('screen-home');
-        }
-    }
+    function deleteEntryFromForm() { if(currentId) { deleteEntryById(currentId); showScreen('screen-home'); } }
 
-    // LÓGICA DO FORMULÁRIO (CRIAÇÃO/EDIÇÃO)
     function openNewOS() {
         currentId = null;
         document.getElementById('os-number-display').innerText = db.lastOS + 1;
         document.getElementById('btn-pdf').style.display = 'none';
-        document.getElementById('btn-delete-form').style.display = 'none'; // Oculta lixeira ao criar novo
-        document.getElementById('f-cliente').value = '';
-        document.getElementById('f-endereco').value = '';
-        document.getElementById('f-escopo').value = '';
-        document.getElementById('f-garantia').value = '';
-        document.getElementById('f-tempo').value = '';
-        document.getElementById('f-mao-obra').value = '';
-        document.getElementById('f-empreitada').value = '';
-        document.getElementById('mat-container').innerHTML = '';
-        addMaterialRow();
-        
+        document.getElementById('btn-delete-form').style.display = 'none';
+        document.getElementById('f-cliente').value = ''; document.getElementById('f-endereco').value = '';
+        document.getElementById('f-data-os').valueAsDate = new Date();
+        document.getElementById('f-escopo').value = ''; document.getElementById('f-garantia').value = '';
+        document.getElementById('f-tempo').value = ''; document.getElementById('f-mao-obra').value = ''; document.getElementById('f-empreitada').value = '';
+        document.getElementById('mat-container').innerHTML = ''; addMaterialRow();
         document.querySelectorAll('.screen').forEach(s => s.classList.remove('active'));
         document.getElementById('screen-os-form').classList.add('active');
     }
@@ -294,50 +284,31 @@
     }
 
     function addMaterialRow() {
-        const div = document.createElement('div');
-        div.className = 'mat-grid';
+        const div = document.createElement('div'); div.className = 'mat-grid';
         div.innerHTML = `<input type="text" placeholder="Material" class="m-d"><input type="number" placeholder="Qtd" class="m-q"><input type="number" placeholder="V.U" class="m-v">`;
         document.getElementById('mat-container').appendChild(div);
     }
 
     function saveData() {
         const entry = {
-            id: currentId || Date.now(),
-            osNum: currentId ? parseInt(document.getElementById('os-number-display').innerText) : ++db.lastOS,
-            cliente: document.getElementById('f-cliente').value,
-            endereco: document.getElementById('f-endereco').value,
-            dataRaw: document.getElementById('f-data-os').value,
-            data: document.getElementById('f-data-os').value.split('-').reverse().join('/'),
-            tipo: document.getElementById('f-tipo').value,
-            escopo: document.getElementById('f-escopo').value,
-            garantia: document.getElementById('f-garantia').value,
-            tempo: document.getElementById('f-tempo').value,
-            maoObra: document.getElementById('f-mao-obra').value,
-            empreitada: document.getElementById('f-empreitada').value,
-            materiais: Array.from(document.querySelectorAll('.mat-grid')).map(row => ({
-                d: row.querySelector('.m-d').value, q: row.querySelector('.m-q').value, v: row.querySelector('.m-v').value
-            })).filter(m => m.d)
+            id: currentId || Date.now(), osNum: currentId ? parseInt(document.getElementById('os-number-display').innerText) : ++db.lastOS,
+            cliente: document.getElementById('f-cliente').value, endereco: document.getElementById('f-endereco').value,
+            dataRaw: document.getElementById('f-data-os').value, data: document.getElementById('f-data-os').value.split('-').reverse().join('/'),
+            tipo: document.getElementById('f-tipo').value, escopo: document.getElementById('f-escopo').value, garantia: document.getElementById('f-garantia').value,
+            tempo: document.getElementById('f-tempo').value, maoObra: document.getElementById('f-mao-obra').value, empreitada: document.getElementById('f-empreitada').value,
+            materiais: Array.from(document.querySelectorAll('.mat-grid')).map(row => ({d: row.querySelector('.m-d').value, q: row.querySelector('.m-q').value, v: row.querySelector('.m-v').value})).filter(m => m.d)
         };
-        if(currentId) db.entries = db.entries.map(e => e.id === currentId ? entry : e);
-        else db.entries.push(entry);
-        localStorage.setItem('hs_database', JSON.stringify(db));
-        alert("Salvo com sucesso!");
-        showScreen('screen-home');
+        if(currentId) db.entries = db.entries.map(e => e.id === currentId ? entry : e); else db.entries.push(entry);
+        localStorage.setItem('hs_database', JSON.stringify(db)); alert("Salvo com sucesso!"); showScreen('screen-home');
     }
 
     function editEntry(id) {
-        const e = db.entries.find(entry => entry.id === id);
-        currentId = e.id;
+        const e = db.entries.find(en => en.id === id); currentId = e.id;
         document.getElementById('os-number-display').innerText = e.osNum;
-        document.getElementById('f-cliente').value = e.cliente;
-        document.getElementById('f-endereco').value = e.endereco;
-        document.getElementById('f-data-os').value = e.dataRaw;
-        document.getElementById('f-tipo').value = e.tipo;
-        document.getElementById('f-escopo').value = e.escopo;
-        document.getElementById('f-garantia').value = e.garantia;
-        document.getElementById('f-tempo').value = e.tempo || '';
-        document.getElementById('f-mao-obra').value = e.maoObra;
-        document.getElementById('f-empreitada').value = e.empreitada;
+        document.getElementById('f-cliente').value = e.cliente; document.getElementById('f-endereco').value = e.endereco;
+        document.getElementById('f-data-os').value = e.dataRaw; document.getElementById('f-tipo').value = e.tipo;
+        document.getElementById('f-escopo').value = e.escopo; document.getElementById('f-garantia').value = e.garantia;
+        document.getElementById('f-tempo').value = e.tempo || ''; document.getElementById('f-mao-obra').value = e.maoObra; document.getElementById('f-empreitada').value = e.empreitada;
         const mc = document.getElementById('mat-container'); mc.innerHTML = '';
         e.materiais.forEach(m => {
             const div = document.createElement('div'); div.className = 'mat-grid';
@@ -346,59 +317,40 @@
         });
         if(e.materiais.length === 0) addMaterialRow();
         toggleFormFields();
-        
-        document.getElementById('btn-pdf').style.display = 'block';
-        document.getElementById('btn-delete-form').style.display = 'block'; // Mostra lixeira no form
-        
-        document.querySelectorAll('.screen').forEach(s => s.classList.remove('active'));
-        document.getElementById('screen-os-form').classList.add('active');
+        document.getElementById('btn-pdf').style.display = 'block'; document.getElementById('btn-delete-form').style.display = 'block';
+        document.querySelectorAll('.screen').forEach(s => s.classList.remove('active')); document.getElementById('screen-os-form').classList.add('active');
     }
 
-    // EXPORTAR PDF (INTACTO)
     function exportPDF() {
-        const e = db.entries.find(entry => entry.id === currentId);
-        document.getElementById('p-cliente').innerText = e.cliente;
-        document.getElementById('p-data').innerText = e.data;
-        document.getElementById('p-endereco').innerText = e.endereco;
-        document.getElementById('p-os-num').innerText = e.osNum;
-
+        const e = db.entries.find(en => en.id === currentId);
+        document.getElementById('p-cliente').innerText = e.cliente; document.getElementById('p-data').innerText = e.data;
+        document.getElementById('p-endereco').innerText = e.endereco; document.getElementById('p-os-num').innerText = e.osNum;
         let html = '';
         if(e.tipo === 'orcamento') {
             document.getElementById('pdf-tipo-txt').innerText = "PROPOSTA DE SERVIÇO DE MANUTENÇÃO E INSTALAÇÃO ELÉTRICA ESPECIALIZADA";
-            html = `
-            <div class="pdf-body">
-                <div class="pdf-col-left">
+            html = `<div class="pdf-body"><div class="pdf-col-left">
                     <div class="pdf-section-title">Escopo do Trabalho:</div><ul>${e.escopo.split('\n').filter(l => l.trim() !== '').map(l => `<li>${l}</li>`).join('')}</ul>
                     <div class="pdf-section-title">Responsável Técnico:</div><ul><li>Nome do Responsável: <strong>Higor Servelo</strong></li></ul>
                     <div class="pdf-section-title">Tempo de Serviço:</div><ul><li>Previsão de execução: <strong>${e.tempo}</strong></li></ul>
-                </div>
-                <div class="pdf-col-right">
+                </div><div class="pdf-col-right">
                     <div class="pdf-section-title">Diferencial e Garantia:</div><ul>${e.garantia.split('\n').filter(l => l.trim() !== '').map(l => `<li>${l}</li>`).join('')}</ul>
-                    <div class="pdf-section-title">Investimento:</div>
-                    <ul style="list-style:none; padding:0;">
+                    <div class="pdf-section-title">Investimento:</div><ul style="list-style:none; padding:0;">
                         <li><strong>Valor da mão de obra: R$ ${parseFloat(e.maoObra || 0).toLocaleString('pt-BR', {minimumFractionDigits: 2})}</strong></li>
                         <li style="margin-top:10px;">Nota: Valor referente à mão de obra. O custo total de <strong>empreitada</strong> (materiais e mão de obra) é de <strong>R$ ${parseFloat(e.empreitada || 0).toLocaleString('pt-BR', {minimumFractionDigits: 2})}</strong>.</li>
-                        <li style="margin-top:10px;">Pagamento: 50% de sinal e 50% na entrega.</li>
-                    </ul>
-                </div>
-            </div>`;
+                        <li style="margin-top:10px;">Pagamento: 50% de sinal e 50% na entrega.</li></ul>
+                </div></div>`;
         } else {
             document.getElementById('pdf-tipo-txt').innerText = "LISTA DE MATERIAIS ELÉTRICOS - ATUALIZADA";
             let rows = '', total = 0;
-            e.materiais.forEach(m => { 
-                let sub = m.q * m.v; total += sub;
-                rows += `<tr><td>${m.d}</td><td>${m.q} unid.</td><td>R$ ${parseFloat(m.v).toFixed(2).replace('.',',')}</td><td>R$ ${sub.toFixed(2).replace('.',',')}</td></tr>`;
-            });
+            e.materiais.forEach(m => { let sub = m.q * m.v; total += sub; rows += `<tr><td>${m.d}</td><td>${m.q} unid.</td><td>R$ ${parseFloat(m.v).toFixed(2).replace('.',',')}</td><td>R$ ${sub.toFixed(2).replace('.',',')}</td></tr>`; });
             html = `<table class="pdf-table"><thead><tr><th>Descrição</th><th>Qtd</th><th>Unit.</th><th>Total</th></tr></thead><tbody>${rows}</tbody><tfoot><tr style="font-weight:bold;"><td colspan="3" style="text-align:right">TOTAL ESTIMADO</td><td>R$ ${total.toFixed(2).replace('.',',')}</td></tr></tfoot></table>`;
         }
         document.getElementById('p-corpo').innerHTML = html;
-        
         const opt = { margin: 0, filename: `OS_${e.osNum}.pdf`, image: { type: 'jpeg', quality: 0.98 }, html2canvas: { scale: 3, useCORS: true, letterRendering: true, y: 0, scrollY: 0 }, jsPDF: { unit: 'mm', format: 'a4', orientation: 'portrait' } };
         html2pdf().from(document.getElementById('pdf-template')).set(opt).save();
     }
-
-    // Inicializa a tela Início
     showScreen('screen-home');
 </script>
 </body>
 </html>
+
