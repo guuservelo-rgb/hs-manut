@@ -10,8 +10,13 @@
         body { font-family: 'Segoe UI', system-ui, sans-serif; background: var(--bg); color: var(--text); margin: 0; padding: 0; }
         .container { max-width: 950px; margin: 0 auto; padding: 15px; }
         
+        /* Menu de Navegação */
+        .nav-container { display: flex; gap: 8px; margin-bottom: 20px; overflow-x: auto; padding-bottom: 5px; }
+        .nav-btn { flex: 1; min-width: 85px; background: #e0e0e0; color: var(--primary); border: none; padding: 12px 5px; border-radius: 8px; font-weight: bold; cursor: pointer; text-align: center; font-size: 14px; white-space: nowrap; }
+        .nav-btn:hover, .nav-btn.active-nav { background: var(--primary); color: white; }
+
         .card { background: white; padding: 20px; border-radius: 15px; box-shadow: 0 4px 15px rgba(0,0,0,0.1); margin-bottom: 20px; border: 1px solid #e0e0e0; }
-        h1, h2 { color: var(--primary); text-align: center; }
+        h1, h2, h3 { color: var(--primary); text-align: center; }
         .btn { background: var(--primary); color: white; border: none; padding: 12px 20px; border-radius: 8px; cursor: pointer; font-weight: bold; width: 100%; margin: 5px 0; font-size: 16px; }
         .btn-accent { background: var(--accent); }
         .btn-danger { background: var(--danger); }
@@ -29,10 +34,11 @@
 
         .list-item { background: #fff; border-left: 5px solid var(--primary); padding: 15px; margin: 10px 0; border-radius: 8px; cursor: pointer; display: flex; justify-content: space-between; align-items: center; box-shadow: 0 2px 8px rgba(0,0,0,0.06); }
         .os-badge { background: #eee; padding: 4px 8px; border-radius: 4px; font-size: 12px; font-weight: bold; }
+        .del-btn { background: var(--danger); color: white; border: none; border-radius: 6px; padding: 8px 12px; font-size: 16px; cursor: pointer; display: flex; align-items: center; justify-content: center; }
 
         .mat-grid { display: grid; grid-template-columns: 2fr 1fr 1fr; gap: 8px; margin-bottom: 10px; }
 
-        /* --- ESTILO PDF --- */
+        /* --- ESTILO PDF (INTACTO) --- */
         #print-area { position: absolute; left: -9999px; top: 0; }
         .pdf-content { 
             width: 210mm; height: 297mm; padding: 10mm 15mm; background: white; color: black; 
@@ -63,14 +69,46 @@
 <body>
 
 <div class="container">
+
+    <div class="nav-container">
+        <button id="nav-home" class="nav-btn active-nav" onclick="showScreen('screen-home')">Início</button>
+        <button id="nav-clientes" class="nav-btn" onclick="showScreen('screen-clientes')">Clientes</button>
+        <button id="nav-os" class="nav-btn" onclick="showScreen('screen-os-list')">Ordens de Serviço</button>
+        <button id="nav-orcamentos" class="nav-btn" onclick="showScreen('screen-orcamentos')">Orçamentos</button>
+    </div>
+
     <div id="screen-home" class="screen active">
         <h1>HS - GESTÃO & ORÇAMENTOS</h1>
         <div class="card search-container">
             <input type="text" id="main-search" placeholder="Pesquisar cliente ou OS...">
-            <button class="btn btn-search" onclick="filterClients()">Pesquisar</button>
+            <button class="btn btn-search" onclick="filterHome()">Pesquisar</button>
         </div>
         <button class="btn" onclick="openNewOS()">+ Criar Nova Ordem de Serviço</button>
-        <div id="client-list-container"></div>
+        <h3>Recentes</h3>
+        <div id="home-list-container"></div>
+    </div>
+
+    <div id="screen-clientes" class="screen card">
+        <h2>Lista de Clientes</h2>
+        <div id="list-clientes-container"></div>
+    </div>
+
+    <div id="screen-cliente-detalhes" class="screen card">
+        <h2 id="detalhe-nome-cliente">Nome do Cliente</h2>
+        <p><strong>Endereço Base:</strong> <span id="detalhe-end-cliente"></span></p>
+        <button class="btn btn-outline" onclick="showScreen('screen-clientes')" style="margin-bottom: 20px;">Voltar para Clientes</button>
+        <h3>Histórico de Ordens de Serviço</h3>
+        <div id="list-cliente-os"></div>
+    </div>
+
+    <div id="screen-os-list" class="screen card">
+        <h2>Todas as Ordens de Serviço</h2>
+        <div id="list-todas-os-container"></div>
+    </div>
+
+    <div id="screen-orcamentos" class="screen card">
+        <h2>Todos os Orçamentos</h2>
+        <div id="list-orcamentos-container"></div>
     </div>
 
     <div id="screen-os-form" class="screen card">
@@ -102,7 +140,7 @@
 
         <button class="btn" onclick="saveData()">💾 Salvar no iPhone</button>
         <button class="btn btn-accent" id="btn-pdf" style="display:none;" onclick="exportPDF()">📄 Gerar PDF Profissional</button>
-        <button class="btn btn-danger" id="btn-delete" style="display:none;" onclick="deleteEntry()">🗑️ Excluir Registro</button>
+        <button class="btn btn-danger" id="btn-delete-form" style="display:none;" onclick="deleteEntryFromForm()">🗑️ Excluir Registro</button>
         <button class="btn btn-outline" onclick="showScreen('screen-home')">Voltar</button>
     </div>
 </div>
@@ -130,17 +168,111 @@
     let db = JSON.parse(localStorage.getItem('hs_database')) || { lastOS: 1000, entries: [] };
     let currentId = null;
 
+    // GERENCIADOR DE TELAS E NAVEGAÇÃO
     function showScreen(id) {
+        // Oculta todas as telas
         document.querySelectorAll('.screen').forEach(s => s.classList.remove('active'));
+        // Remove destaque de todos os botões do menu
+        document.querySelectorAll('.nav-btn').forEach(b => b.classList.remove('active-nav'));
+        
+        // Exibe a tela alvo
         document.getElementById(id).classList.add('active');
-        if(id === 'screen-home') renderList();
+        
+        // Destaca o botão correspondente no menu
+        if(id === 'screen-home') { document.getElementById('nav-home').classList.add('active-nav'); renderHome(); }
+        else if(id === 'screen-clientes') { document.getElementById('nav-clientes').classList.add('active-nav'); renderClientes(); }
+        else if(id === 'screen-os-list') { document.getElementById('nav-os').classList.add('active-nav'); renderAllOS(); }
+        else if(id === 'screen-orcamentos') { document.getElementById('nav-orcamentos').classList.add('active-nav'); renderOrcamentos(); }
     }
 
+    // GERA O HTML DOS ITENS DAS LISTAS COM A LIXEIRA
+    function getListItemHTML(e) {
+        return `
+        <div class="list-item" onclick="editEntry(${e.id})">
+            <div style="flex-grow: 1;">
+                <strong>${e.cliente}</strong><br>
+                <small>${e.tipo.toUpperCase()} - ${e.data}</small>
+            </div>
+            <div style="display: flex; align-items: center; gap: 10px;">
+                <span class="os-badge">OS ${e.osNum}</span>
+                <button class="del-btn" onclick="event.stopPropagation(); deleteEntryById(${e.id})">🗑️</button>
+            </div>
+        </div>`;
+    }
+
+    // RENDERIZADORES DAS ABAS
+    function renderHome(filter = '') {
+        const container = document.getElementById('home-list-container');
+        let filtered = db.entries;
+        if(filter) {
+            filtered = db.entries.filter(e => e.cliente.toLowerCase().includes(filter.toLowerCase()) || e.osNum.toString().includes(filter));
+        }
+        container.innerHTML = filtered.reverse().slice(0, 10).map(getListItemHTML).join('');
+    }
+
+    function filterHome() { renderHome(document.getElementById('main-search').value); }
+
+    function renderAllOS() {
+        document.getElementById('list-todas-os-container').innerHTML = db.entries.slice().reverse().map(getListItemHTML).join('');
+    }
+
+    function renderOrcamentos() {
+        const orcamentos = db.entries.filter(e => e.tipo === 'orcamento');
+        document.getElementById('list-orcamentos-container').innerHTML = orcamentos.reverse().map(getListItemHTML).join('');
+    }
+
+    function renderClientes() {
+        const clientesUnicos = [...new Set(db.entries.map(e => e.cliente))];
+        const container = document.getElementById('list-clientes-container');
+        container.innerHTML = clientesUnicos.map(cli => `
+            <div class="list-item" onclick="openClienteDetalhes('${cli}')">
+                <strong style="font-size: 18px;">${cli}</strong>
+                <span style="color: var(--primary);">Ver Histórico ➔</span>
+            </div>
+        `).join('');
+    }
+
+    function openClienteDetalhes(nome) {
+        document.getElementById('detalhe-nome-cliente').innerText = nome;
+        const e = db.entries.find(en => en.cliente === nome);
+        document.getElementById('detalhe-end-cliente').innerText = e ? e.endereco : '';
+        const registros = db.entries.filter(en => en.cliente === nome);
+        document.getElementById('list-cliente-os').innerHTML = registros.reverse().map(getListItemHTML).join('');
+        
+        document.querySelectorAll('.screen').forEach(s => s.classList.remove('active'));
+        document.getElementById('screen-cliente-detalhes').classList.add('active');
+    }
+
+    // LÓGICA DE EXCLUSÃO (LIXEIRA)
+    function deleteEntryById(id) {
+        const e = db.entries.find(entry => entry.id === id);
+        if(!e) return;
+        const tipoNome = e.tipo === 'orcamento' ? 'o orçamento' : 'a lista de materiais';
+        if(confirm(`Tem certeza que deseja excluir ${tipoNome} da OS ${e.osNum} do cliente "${e.cliente}"?`)) {
+            db.entries = db.entries.filter(entry => entry.id !== id);
+            localStorage.setItem('hs_database', JSON.stringify(db));
+            
+            // Recarrega a tela que estiver ativa para refletir a exclusão
+            if(document.getElementById('screen-home').classList.contains('active')) renderHome();
+            if(document.getElementById('screen-os-list').classList.contains('active')) renderAllOS();
+            if(document.getElementById('screen-orcamentos').classList.contains('active')) renderOrcamentos();
+            if(document.getElementById('screen-cliente-detalhes').classList.contains('active')) openClienteDetalhes(e.cliente);
+        }
+    }
+
+    function deleteEntryFromForm() {
+        if(currentId) {
+            deleteEntryById(currentId);
+            showScreen('screen-home');
+        }
+    }
+
+    // LÓGICA DO FORMULÁRIO (CRIAÇÃO/EDIÇÃO)
     function openNewOS() {
         currentId = null;
         document.getElementById('os-number-display').innerText = db.lastOS + 1;
         document.getElementById('btn-pdf').style.display = 'none';
-        document.getElementById('btn-delete').style.display = 'none';
+        document.getElementById('btn-delete-form').style.display = 'none'; // Oculta lixeira ao criar novo
         document.getElementById('f-cliente').value = '';
         document.getElementById('f-endereco').value = '';
         document.getElementById('f-escopo').value = '';
@@ -150,7 +282,9 @@
         document.getElementById('f-empreitada').value = '';
         document.getElementById('mat-container').innerHTML = '';
         addMaterialRow();
-        showScreen('screen-os-form');
+        
+        document.querySelectorAll('.screen').forEach(s => s.classList.remove('active'));
+        document.getElementById('screen-os-form').classList.add('active');
     }
 
     function toggleFormFields() {
@@ -169,7 +303,7 @@
     function saveData() {
         const entry = {
             id: currentId || Date.now(),
-            osNum: currentId ? document.getElementById('os-number-display').innerText : ++db.lastOS,
+            osNum: currentId ? parseInt(document.getElementById('os-number-display').innerText) : ++db.lastOS,
             cliente: document.getElementById('f-cliente').value,
             endereco: document.getElementById('f-endereco').value,
             dataRaw: document.getElementById('f-data-os').value,
@@ -191,32 +325,8 @@
         showScreen('screen-home');
     }
 
-    function deleteEntry() {
-        const e = db.entries.find(entry => entry.id === currentId);
-        const tipoNome = e.tipo === 'orcamento' ? 'o orçamento' : 'a lista de materiais';
-        if(confirm(`Tem certeza que deseja excluir ${tipoNome} "${e.cliente}"?`)) {
-            db.entries = db.entries.filter(entry => entry.id !== currentId);
-            localStorage.setItem('hs_database', JSON.stringify(db));
-            showScreen('screen-home');
-        }
-    }
-
-    function renderList(filter = '') {
-        const container = document.getElementById('client-list-container');
-        container.innerHTML = '';
-        db.entries.filter(e => e.cliente.toLowerCase().includes(filter.toLowerCase()) || e.osNum.toString().includes(filter))
-        .reverse().forEach(e => {
-            const div = document.createElement('div');
-            div.className = 'list-item';
-            div.onclick = () => editEntry(e);
-            div.innerHTML = `<div><strong>${e.cliente}</strong><br><small>${e.tipo.toUpperCase()} - ${e.data}</small></div><span class="os-badge">OS ${e.osNum}</span>`;
-            container.appendChild(div);
-        });
-    }
-
-    function filterClients() { renderList(document.getElementById('main-search').value); }
-
-    function editEntry(e) {
+    function editEntry(id) {
+        const e = db.entries.find(entry => entry.id === id);
         currentId = e.id;
         document.getElementById('os-number-display').innerText = e.osNum;
         document.getElementById('f-cliente').value = e.cliente;
@@ -234,12 +344,17 @@
             div.innerHTML = `<input type="text" value="${m.d}" class="m-d"><input type="number" value="${m.q}" class="m-q"><input type="number" value="${m.v}" class="m-v">`;
             mc.appendChild(div);
         });
+        if(e.materiais.length === 0) addMaterialRow();
         toggleFormFields();
+        
         document.getElementById('btn-pdf').style.display = 'block';
-        document.getElementById('btn-delete').style.display = 'block';
-        showScreen('screen-os-form');
+        document.getElementById('btn-delete-form').style.display = 'block'; // Mostra lixeira no form
+        
+        document.querySelectorAll('.screen').forEach(s => s.classList.remove('active'));
+        document.getElementById('screen-os-form').classList.add('active');
     }
 
+    // EXPORTAR PDF (INTACTO)
     function exportPDF() {
         const e = db.entries.find(entry => entry.id === currentId);
         document.getElementById('p-cliente').innerText = e.cliente;
@@ -253,12 +368,12 @@
             html = `
             <div class="pdf-body">
                 <div class="pdf-col-left">
-                    <div class="pdf-section-title">Escopo do Trabalho:</div><ul>${e.escopo.split('\n').map(l => `<li>${l}</li>`).join('')}</ul>
+                    <div class="pdf-section-title">Escopo do Trabalho:</div><ul>${e.escopo.split('\n').filter(l => l.trim() !== '').map(l => `<li>${l}</li>`).join('')}</ul>
                     <div class="pdf-section-title">Responsável Técnico:</div><ul><li>Nome do Responsável: <strong>Higor Servelo</strong></li></ul>
                     <div class="pdf-section-title">Tempo de Serviço:</div><ul><li>Previsão de execução: <strong>${e.tempo}</strong></li></ul>
                 </div>
                 <div class="pdf-col-right">
-                    <div class="pdf-section-title">Diferencial e Garantia:</div><ul>${e.garantia.split('\n').map(l => `<li>${l}</li>`).join('')}</ul>
+                    <div class="pdf-section-title">Diferencial e Garantia:</div><ul>${e.garantia.split('\n').filter(l => l.trim() !== '').map(l => `<li>${l}</li>`).join('')}</ul>
                     <div class="pdf-section-title">Investimento:</div>
                     <ul style="list-style:none; padding:0;">
                         <li><strong>Valor da mão de obra: R$ ${parseFloat(e.maoObra || 0).toLocaleString('pt-BR', {minimumFractionDigits: 2})}</strong></li>
@@ -278,9 +393,12 @@
         }
         document.getElementById('p-corpo').innerHTML = html;
         
-        const opt = { margin: 0, filename: `OS_${e.osNum}.pdf`, html2canvas: { scale: 3, y: 0, scrollY: 0 }, jsPDF: { unit: 'mm', format: 'a4', orientation: 'portrait' } };
+        const opt = { margin: 0, filename: `OS_${e.osNum}.pdf`, image: { type: 'jpeg', quality: 0.98 }, html2canvas: { scale: 3, useCORS: true, letterRendering: true, y: 0, scrollY: 0 }, jsPDF: { unit: 'mm', format: 'a4', orientation: 'portrait' } };
         html2pdf().from(document.getElementById('pdf-template')).set(opt).save();
     }
+
+    // Inicializa a tela Início
+    showScreen('screen-home');
 </script>
 </body>
 </html>
