@@ -32,36 +32,40 @@
 
         .mat-grid { display: grid; grid-template-columns: 2fr 1fr 1fr; gap: 8px; margin-bottom: 10px; }
 
-        /* --- ÁREA DO PDF (CORREÇÃO DE LAYOUT) --- */
-        #print-area { display: none; }
+        /* --- CORREÇÃO CRÍTICA DO PDF --- */
+        #print-area { 
+            position: absolute; 
+            left: -9999px; 
+            top: 0; 
+        }
         .pdf-content { 
             width: 210mm; 
-            min-height: 297mm; 
-            padding: 5mm 12mm; /* Reduzido o topo para 5mm */
+            height: 297mm; 
+            padding: 10mm 15mm; 
             background: white; 
             color: black; 
             font-family: Arial, sans-serif; 
             box-sizing: border-box;
-            position: relative;
+            display: block;
         }
-        .pdf-header { text-align: center; border-bottom: 1.5px solid #000; margin-bottom: 10px; padding-bottom: 5px; }
-        .pdf-header h1 { margin: 0; font-size: 22pt; color: #004a8d; font-weight: bold; }
-        .pdf-header p { margin: 2px 0; font-size: 11pt; font-weight: bold; text-transform: uppercase; }
+        .pdf-header { text-align: center; border-bottom: 2px solid #000; margin-bottom: 10px; padding: 0; }
+        .pdf-header h1 { margin: 0; font-size: 26pt; color: #004a8d; font-weight: bold; padding: 0; line-height: 1.2; }
+        .pdf-header p { margin: 5px 0; font-size: 12pt; font-weight: bold; text-transform: uppercase; color: #333; }
         
-        .pdf-info { display: flex; flex-wrap: wrap; font-size: 10pt; border-bottom: 1px solid #000; padding: 8px 0; margin-bottom: 10px; line-height: 1.4; }
-        .pdf-info div { width: 50%; }
+        .pdf-info { display: flex; flex-wrap: wrap; font-size: 11pt; border-bottom: 1px solid #000; padding: 10px 0; margin-bottom: 15px; }
+        .pdf-info div { width: 50%; margin-bottom: 5px; }
 
-        .pdf-body { display: flex; justify-content: space-between; gap: 15px; font-size: 9.5pt; }
-        .pdf-col-left { width: 60%; }
-        .pdf-col-right { width: 38%; }
+        .pdf-body { display: flex; justify-content: space-between; gap: 20px; font-size: 10pt; line-height: 1.4; }
+        .pdf-col-left { width: 62%; }
+        .pdf-col-right { width: 36%; }
         
-        .pdf-section-title { font-weight: bold; text-transform: uppercase; margin-top: 10px; margin-bottom: 5px; font-size: 10pt; border-bottom: 1px solid #eee; }
-        .pdf-body ul { padding-left: 15px; margin: 0 0 10px 0; list-style-type: disc; }
-        .pdf-body li { margin-bottom: 3px; line-height: 1.3; }
+        .pdf-section-title { font-weight: bold; text-transform: uppercase; margin-top: 15px; margin-bottom: 5px; font-size: 11pt; border-bottom: 1px solid #ccc; }
+        .pdf-body ul { padding-left: 18px; margin: 0; list-style-type: disc; }
+        .pdf-body li { margin-bottom: 5px; }
 
-        .pdf-table { width: 100%; border-collapse: collapse; margin-top: 10px; font-size: 9pt; }
-        .pdf-table th, .pdf-table td { border: 1px solid #ccc; padding: 5px; text-align: left; }
-        .pdf-table th { background: #f2f2f2; }
+        .pdf-table { width: 100%; border-collapse: collapse; margin-top: 15px; font-size: 10pt; }
+        .pdf-table th, .pdf-table td { border: 1px solid #ccc; padding: 8px; text-align: left; }
+        .pdf-table th { background: #333; color: white; }
     </style>
 </head>
 <body>
@@ -122,7 +126,10 @@
             <div><strong>OS Nº:</strong> <span id="p-os-num"></span></div>
         </div>
         <div id="p-corpo"></div>
-        <p style="font-size: 9pt; text-align: center; margin-top: 20px;">Atenciosamente, <strong>Higor Servelo</strong>.</p>
+        <div style="margin-top: 30px; font-size: 10pt; line-height: 1.5;">
+            Agradecemos a oportunidade e ficamos à disposição para esclarecimentos.<br>
+            Atenciosamente, <strong>Higor Servelo</strong>.
+        </div>
     </div>
 </div>
 
@@ -185,10 +192,8 @@
                 v: row.querySelector('.m-v').value
             })).filter(m => m.d)
         };
-
         if(currentId) db.entries = db.entries.map(e => e.id === currentId ? entry : e);
         else db.entries.push(entry);
-
         localStorage.setItem('hs_database', JSON.stringify(db));
         alert("Salvo com sucesso!");
         showScreen('screen-home');
@@ -220,7 +225,6 @@
         document.getElementById('f-garantia').value = e.garantia;
         document.getElementById('f-mao-obra').value = e.maoObra;
         document.getElementById('f-empreitada').value = e.empreitada;
-        
         const mc = document.getElementById('mat-container'); mc.innerHTML = '';
         e.materiais.forEach(m => {
             const div = document.createElement('div'); div.className = 'mat-grid';
@@ -228,7 +232,6 @@
             mc.appendChild(div);
         });
         if(e.materiais.length === 0) addMaterialRow();
-
         toggleFormFields();
         document.getElementById('btn-pdf').style.display = 'block';
         showScreen('screen-os-form');
@@ -241,15 +244,15 @@
         document.getElementById('p-endereco').innerText = e.endereco;
         document.getElementById('p-os-num').innerText = e.osNum;
 
-        let html = '';
+        let htmlContent = '';
         if(e.tipo === 'orcamento') {
             document.getElementById('pdf-tipo-txt').innerText = "PROPOSTA DE SERVIÇO DE MANUTENÇÃO E INSTALAÇÃO ELÉTRICA ESPECIALIZADA";
-            const escopo = e.escopo.split('\n').map(l => `<li>${l}</li>`).join('');
-            const garantia = e.garantia.split('\n').map(l => `<li>${l}</li>`).join('');
+            const escopo = e.escopo.split('\n').filter(l => l.trim() !== '').map(l => `<li>${l}</li>`).join('');
+            const garantia = e.garantia.split('\n').filter(l => l.trim() !== '').map(l => `<li>${l}</li>`).join('');
             const vMo = parseFloat(e.maoObra || 0).toLocaleString('pt-BR', {minimumFractionDigits: 2});
             const vEm = parseFloat(e.empreitada || 0).toLocaleString('pt-BR', {minimumFractionDigits: 2});
 
-            html = `
+            htmlContent = `
             <div class="pdf-body">
                 <div class="pdf-col-left">
                     <div class="pdf-section-title">Escopo do Trabalho:</div><ul>${escopo}</ul>
@@ -258,7 +261,7 @@
                 <div class="pdf-col-right">
                     <div class="pdf-section-title">Diferencial e Garantia:</div><ul>${garantia}</ul>
                     <div class="pdf-section-title">Investimento:</div>
-                    <ul style="list-style:none; padding-left:0;">
+                    <ul style="list-style:none; padding:0;">
                         <li><strong>Valor da mão de obra: R$ ${vMo}</strong></li>
                         <li style="margin-top:10px;">Nota: Valor referente à mão de obra. O custo total de <strong>empreitada</strong> (materiais e mão de obra) é de <strong>R$ ${vEm}</strong>.</li>
                         <li style="margin-top:10px;">Pagamento: 50% de sinal e 50% na entrega.</li>
@@ -270,20 +273,24 @@
             let rows = '', total = 0;
             e.materiais.forEach(m => { 
                 let sub = m.q * m.v; total += sub;
-                rows += `<tr><td>${m.d}</td><td>${m.q}</td><td>R$ ${parseFloat(m.v).toFixed(2)}</td><td>R$ ${sub.toFixed(2)}</td></tr>`;
+                rows += `<tr><td>${m.d}</td><td>${m.q} unid.</td><td>R$ ${parseFloat(m.v).toFixed(2).replace('.',',')}</td><td>R$ ${sub.toFixed(2).replace('.',',')}</td></tr>`;
             });
-            html = `<table class="pdf-table"><thead><tr><th>Descrição</th><th>Qtd</th><th>Unit.</th><th>Total</th></tr></thead><tbody>${rows}</tbody><tfoot><tr style="font-weight:bold; background:#eee;"><td colspan="3" style="text-align:right">TOTAL ESTIMADO</td><td>R$ ${total.toFixed(2)}</td></tr></tfoot></table>`;
+            htmlContent = `<table class="pdf-table"><thead><tr><th>Descrição do Material</th><th>Qtd</th><th>Unit.</th><th>Total</th></tr></thead><tbody>${rows}</tbody><tfoot><tr style="font-weight:bold;"><td colspan="3" style="text-align:right">TOTAL ESTIMADO</td><td>R$ ${total.toFixed(2).replace('.',',')}</td></tr></tfoot></table>`;
         }
-
-        document.getElementById('p-corpo').innerHTML = html;
-        const opt = { margin: 0, filename: `OS_${e.osNum}_HS.pdf`, image: { type: 'jpeg', quality: 0.98 }, html2canvas: { scale: 2, scrollY: 0 }, jsPDF: { unit: 'mm', format: 'a4', orientation: 'portrait' } };
+        document.getElementById('p-corpo').innerHTML = htmlContent;
         
-        document.getElementById('print-area').style.display = 'block';
-        html2pdf().from(document.getElementById('pdf-template')).set(opt).save().then(() => {
-            document.getElementById('print-area').style.display = 'none';
-        });
+        // --- CONFIGURAÇÃO DE RENDERIZAÇÃO BLINDADA ---
+        const element = document.getElementById('pdf-template');
+        const opt = { 
+            margin: 0, 
+            filename: `OS_${e.osNum}.pdf`, 
+            image: { type: 'jpeg', quality: 0.98 }, 
+            html2canvas: { scale: 3, useCORS: true, letterRendering: true, y: 0, scrollY: 0 }, 
+            jsPDF: { unit: 'mm', format: 'a4', orientation: 'portrait' } 
+        };
+        
+        html2pdf().from(element).set(opt).save();
     }
-
     renderList();
 </script>
 </body>
