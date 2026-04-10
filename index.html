@@ -6,52 +6,62 @@
     <title>HS - Gestão & Orçamentos</title>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/html2pdf.js/0.10.1/html2pdf.bundle.min.js"></script>
     <style>
-        :root { --primary: #004a8d; --accent: #ff9800; --bg: #f4f7f6; --text: #333; --border: #ccd; }
+        :root { --primary: #004a8d; --accent: #ff9800; --bg: #f4f7f6; --text: #333; }
         body { font-family: 'Segoe UI', system-ui, sans-serif; background: var(--bg); color: var(--text); margin: 0; padding: 0; }
         .container { max-width: 950px; margin: 0 auto; padding: 15px; }
         
+        /* UI Estilo */
         .card { background: white; padding: 20px; border-radius: 15px; box-shadow: 0 4px 15px rgba(0,0,0,0.1); margin-bottom: 20px; border: 1px solid #e0e0e0; }
         h1, h2 { color: var(--primary); text-align: center; }
-        .btn { background: var(--primary); color: white; border: none; padding: 12px 20px; border-radius: 8px; cursor: pointer; font-weight: bold; width: 100%; margin: 5px 0; font-size: 16px; transition: 0.3s; }
-        .btn:hover { opacity: 0.8; transform: translateY(-1px); }
+        .btn { background: var(--primary); color: white; border: none; padding: 12px 20px; border-radius: 8px; cursor: pointer; font-weight: bold; width: 100%; margin: 5px 0; font-size: 16px; }
         .btn-accent { background: var(--accent); }
         .btn-outline { background: transparent; border: 2px solid var(--primary); color: var(--primary); }
         
-        .search-container { display: flex; gap: 10px; align-items: center; position: sticky; top: 10px; z-index: 100; background: var(--bg); padding: 10px 0; }
-        .search-container input { margin: 0; flex-grow: 1; }
-        .btn-search { width: auto; padding: 12px 25px; margin: 0; }
+        .search-container { display: flex; gap: 10px; margin-bottom: 20px; }
+        .search-container input { flex-grow: 1; padding: 12px; border-radius: 8px; border: 1px solid #ddd; }
+        .btn-search { width: auto; padding: 0 20px; }
 
-        label { display: block; font-weight: bold; color: var(--primary); margin-top: 15px; margin-bottom: 2px; }
-        input, textarea, select { width: 100%; padding: 12px; margin: 5px 0 15px 0; border: 1px solid #ddd; border-radius: 8px; box-sizing: border-box; font-size: 16px; }
+        label { display: block; font-weight: bold; color: var(--primary); margin-top: 10px; }
+        input, textarea, select { width: 100%; padding: 12px; margin: 5px 0 10px 0; border: 1px solid #ddd; border-radius: 8px; box-sizing: border-box; font-size: 16px; }
         
-        .screen { display: none; animation: slideUp 0.3s ease-out; }
+        .screen { display: none; }
         .active { display: block; }
-        @keyframes slideUp { from { transform: translateY(20px); opacity: 0; } to { transform: translateY(0); opacity: 1; } }
 
         .list-item { background: #fff; border-left: 5px solid var(--primary); padding: 15px; margin: 10px 0; border-radius: 8px; cursor: pointer; display: flex; justify-content: space-between; align-items: center; box-shadow: 0 2px 8px rgba(0,0,0,0.06); }
         .os-badge { background: #eee; padding: 4px 8px; border-radius: 4px; font-size: 12px; font-weight: bold; }
 
-        .mat-grid { display: grid; grid-template-columns: 2fr 1fr 1fr; gap: 8px; align-items: center; margin-bottom: 10px; }
+        .mat-grid { display: grid; grid-template-columns: 2fr 1fr 1fr; gap: 8px; margin-bottom: 10px; }
 
+        /* --- ÁREA DO PDF (CORREÇÃO DE LAYOUT) --- */
         #print-area { display: none; }
-        .print-page { width: 210mm; padding: 10mm 15mm; background: white; color: black; font-family: 'Arial', sans-serif; box-sizing: border-box; }
-        .print-header { text-align: center; border-bottom: 1px solid #000; margin-bottom: 15px; }
-        .print-header h1 { margin: 0; font-size: 24pt; color: #004a8d; font-weight: bold; }
-        .print-header p { margin: 5px 0; font-size: 12pt; font-weight: bold; }
-        .p-info-block { display: flex; flex-wrap: wrap; font-size: 11pt; margin-bottom: 15px; line-height: 1.4; border-bottom: 1px solid #000; padding-bottom: 10px; }
-        .p-info-block div { width: 49%; }
+        .pdf-content { 
+            width: 210mm; 
+            min-height: 297mm; 
+            padding: 5mm 12mm; /* Reduzido o topo para 5mm */
+            background: white; 
+            color: black; 
+            font-family: Arial, sans-serif; 
+            box-sizing: border-box;
+            position: relative;
+        }
+        .pdf-header { text-align: center; border-bottom: 1.5px solid #000; margin-bottom: 10px; padding-bottom: 5px; }
+        .pdf-header h1 { margin: 0; font-size: 22pt; color: #004a8d; font-weight: bold; }
+        .pdf-header p { margin: 2px 0; font-size: 11pt; font-weight: bold; text-transform: uppercase; }
+        
+        .pdf-info { display: flex; flex-wrap: wrap; font-size: 10pt; border-bottom: 1px solid #000; padding: 8px 0; margin-bottom: 10px; line-height: 1.4; }
+        .pdf-info div { width: 50%; }
 
-        .print-body { display: flex; justify-content: space-between; gap: 20px; font-size: 10.5pt; line-height: 1.5; margin-bottom: 20px; }
-        .left-col { width: 62%; }
-        .right-col { width: 36%; }
-        .print-body h3 { font-size: 11.5pt; font-weight: bold; margin-bottom: 5px; margin-top: 15px; border-bottom: 1px solid #ddd; padding-bottom: 3px; color: #000; }
-        .print-body ul { padding-left: 15px; margin-top: 0; margin-bottom: 10px; list-style-type: disc; }
-        .print-body li { margin-bottom: 5px; }
-        .print-body .sub-title { font-weight: bold; font-size: 10.5pt; text-transform: uppercase; margin-top: 15px; color: #000; }
+        .pdf-body { display: flex; justify-content: space-between; gap: 15px; font-size: 9.5pt; }
+        .pdf-col-left { width: 60%; }
+        .pdf-col-right { width: 38%; }
+        
+        .pdf-section-title { font-weight: bold; text-transform: uppercase; margin-top: 10px; margin-bottom: 5px; font-size: 10pt; border-bottom: 1px solid #eee; }
+        .pdf-body ul { padding-left: 15px; margin: 0 0 10px 0; list-style-type: disc; }
+        .pdf-body li { margin-bottom: 3px; line-height: 1.3; }
 
-        .inv-tabela { border-collapse: collapse; width: 100%; border: 1px solid #ddd; margin-top: 5px; margin-bottom: 15px;}
-        .inv-tabela th, .inv-tabela td { border: 1px solid #ddd; padding: 6px; text-align: left;}
-        .inv-tabela th { background-color: #f2f2f2; font-weight: bold;}
+        .pdf-table { width: 100%; border-collapse: collapse; margin-top: 10px; font-size: 9pt; }
+        .pdf-table th, .pdf-table td { border: 1px solid #ccc; padding: 5px; text-align: left; }
+        .pdf-table th { background: #f2f2f2; }
     </style>
 </head>
 <body>
@@ -60,7 +70,7 @@
     <div id="screen-home" class="screen active">
         <h1>HS - GESTÃO & ORÇAMENTOS</h1>
         <div class="card search-container">
-            <input type="text" id="main-search" placeholder="Pesquisar cliente ou Nº da OS...">
+            <input type="text" id="main-search" placeholder="Pesquisar cliente ou OS...">
             <button class="btn btn-search" onclick="filterClients()">Pesquisar</button>
         </div>
         <button class="btn" onclick="openNewOS()">+ Criar Nova Ordem de Serviço</button>
@@ -69,20 +79,12 @@
 
     <div id="screen-os-form" class="screen card">
         <h2 id="form-title">Nova Ordem de Serviço</h2>
-        <div style="text-align: right; margin-bottom: 10px;">
-            <span class="os-badge">OS Nº: <span id="os-number-display">0000</span></span>
-        </div>
+        <div style="text-align: right;"><span class="os-badge">OS Nº: <span id="os-number-display">0000</span></span></div>
         
-        <label>Cliente</label>
-        <input type="text" id="f-cliente" placeholder="Nome do Cliente">
-        <label>Endereço</label>
-        <input type="text" id="f-endereco" placeholder="Endereço Completo">
-        <label>Responsável Técnico</label>
-        <input type="text" id="f-responsavel" value="Higor Servelo" readonly>
-        <label>Data de Elaboração</label>
-        <input type="date" id="f-data-os">
+        <label>Cliente</label><input type="text" id="f-cliente">
+        <label>Endereço</label><input type="text" id="f-endereco">
+        <label>Data</label><input type="date" id="f-data-os">
         
-        <hr>
         <label>Tipo de Documento</label>
         <select id="f-tipo" onchange="toggleFormFields()">
             <option value="orcamento">Proposta de Orçamento</option>
@@ -90,56 +92,43 @@
         </select>
 
         <div id="fields-orcamento">
-            <label>Escopo do Trabalho</label>
-            <textarea id="f-escopo" rows="6" placeholder="Descreva os serviços realizados..."></textarea>
-            <label>Diferencial e Garantia</label>
-            <textarea id="f-garantia" rows="3" placeholder="Garantia e diferenciais..."></textarea>
-            
-            <label>Valor da Mão de Obra (R$)</label>
-            <input type="number" id="f-mao-obra" placeholder="Apenas valor numérico">
-            
-            <label>Valor Total da Empreitada (Materiais + Mão de Obra) (R$)</label>
-            <input type="number" id="f-empreitada" placeholder="Apenas valor numérico">
+            <label>Escopo do Trabalho</label><textarea id="f-escopo" rows="6"></textarea>
+            <label>Diferencial e Garantia</label><textarea id="f-garantia" rows="3"></textarea>
+            <label>Valor da Mão de Obra (R$)</label><input type="number" id="f-mao-obra">
+            <label>Valor Total da Empreitada (Materiais + Mão de Obra) (R$)</label><input type="number" id="f-empreitada">
         </div>
 
         <div id="fields-lista" style="display:none;">
-            <div id="mat-container">
-                <div class="mat-grid">
-                    <input type="text" placeholder="Material" class="m-desc">
-                    <input type="number" placeholder="Qtd" class="m-qtd">
-                    <input type="number" placeholder="V. Unit" class="m-val">
-                </div>
-            </div>
+            <div id="mat-container"></div>
             <button class="btn btn-outline" onclick="addMaterialRow()">+ Adicionar Item</button>
         </div>
 
-        <button class="btn" onclick="saveData()">💾 Salvar OS no iPhone</button>
+        <button class="btn" onclick="saveData()">💾 Salvar no iPhone</button>
         <button class="btn btn-accent" id="btn-pdf" style="display:none;" onclick="exportPDF()">📄 Gerar PDF Profissional</button>
         <button class="btn btn-outline" onclick="showScreen('screen-home')">Voltar</button>
     </div>
 </div>
 
 <div id="print-area">
-    <div id="pdf-template" class="print-page">
-        <div class="print-header">
+    <div id="pdf-template" class="pdf-content">
+        <div class="pdf-header">
             <h1>HS MANUTENÇÃO ELÉTRICA</h1>
-            <p id="pdf-tipo-title">PROPOSTA DE SERVIÇO DE MANUTENÇÃO E INSTALAÇÃO ELÉTRICA ESPECIALIZADA</p>
+            <p id="pdf-tipo-txt">PROPOSTA DE SERVIÇO DE MANUTENÇÃO E INSTALAÇÃO ELÉTRICA ESPECIALIZADA</p>
         </div>
-        <div class="p-info-block">
+        <div class="pdf-info">
             <div><strong>Cliente:</strong> <span id="p-cliente"></span></div>
             <div><strong>Data:</strong> <span id="p-data"></span></div>
             <div><strong>Endereço:</strong> <span id="p-endereco"></span></div>
-            <div style="width: 100%;"><strong>OS Nº:</strong> <span id="pdf-os-num"></span></div>
+            <div><strong>OS Nº:</strong> <span id="p-os-num"></span></div>
         </div>
-        <div id="p-conteudo"></div>
+        <div id="p-corpo"></div>
+        <p style="font-size: 9pt; text-align: center; margin-top: 20px;">Atenciosamente, <strong>Higor Servelo</strong>.</p>
     </div>
 </div>
 
 <script>
     let db = JSON.parse(localStorage.getItem('hs_database')) || { lastOS: 1000, entries: [] };
-    let currentEditingId = null;
-
-    document.getElementById('f-data-os').valueAsDate = new Date();
+    let currentId = null;
 
     function showScreen(id) {
         document.querySelectorAll('.screen').forEach(s => s.classList.remove('active'));
@@ -148,23 +137,19 @@
     }
 
     function openNewOS() {
-        currentEditingId = null;
-        document.getElementById('form-title').innerText = "Nova Ordem de Serviço";
+        currentId = null;
         document.getElementById('os-number-display').innerText = db.lastOS + 1;
+        document.getElementById('f-data-os').valueAsDate = new Date();
         document.getElementById('btn-pdf').style.display = 'none';
-        clearForm();
-        showScreen('screen-os-form');
-    }
-
-    function clearForm() {
         document.getElementById('f-cliente').value = '';
         document.getElementById('f-endereco').value = '';
-        document.getElementById('f-data-os').valueAsDate = new Date();
-        document.getElementById('f-escopo').value = "";
-        document.getElementById('f-garantia').value = "";
+        document.getElementById('f-escopo').value = '';
+        document.getElementById('f-garantia').value = '';
         document.getElementById('f-mao-obra').value = '';
         document.getElementById('f-empreitada').value = '';
-        document.getElementById('mat-container').innerHTML = `<div class="mat-grid"><input type="text" placeholder="Material" class="m-desc"><input type="number" placeholder="Qtd" class="m-qtd"><input type="number" placeholder="V. Unit" class="m-val"></div>`;
+        document.getElementById('mat-container').innerHTML = '';
+        addMaterialRow();
+        showScreen('screen-os-form');
     }
 
     function toggleFormFields() {
@@ -176,43 +161,33 @@
     function addMaterialRow() {
         const div = document.createElement('div');
         div.className = 'mat-grid';
-        div.innerHTML = `<input type="text" placeholder="Material" class="m-desc"><input type="number" placeholder="Qtd" class="m-qtd"><input type="number" placeholder="V. Unit" class="m-val">`;
+        div.innerHTML = `<input type="text" placeholder="Material" class="m-d"><input type="number" placeholder="Qtd" class="m-q"><input type="number" placeholder="V.U" class="m-v">`;
         document.getElementById('mat-container').appendChild(div);
     }
 
     function saveData() {
-        const dataStr = document.getElementById('f-data-os').value;
-        const [year, month, day] = dataStr.split('-');
-        const dataFormatada = `${day}/${month}/${year}`;
-
-        let materials = [];
-        document.querySelectorAll('.mat-grid').forEach(row => {
-            const desc = row.querySelector('.m-desc').value;
-            if(desc) materials.push({ desc, qtd: row.querySelector('.m-qtd').value, val: row.querySelector('.m-val').value });
-        });
-
+        const dataVal = document.getElementById('f-data-os').value;
         const entry = {
-            id: currentEditingId || Date.now(),
-            osNum: currentEditingId ? document.getElementById('os-number-display').innerText : ++db.lastOS,
+            id: currentId || Date.now(),
+            osNum: currentId ? document.getElementById('os-number-display').innerText : ++db.lastOS,
             cliente: document.getElementById('f-cliente').value,
             endereco: document.getElementById('f-endereco').value,
-            responsavel: "Higor Servelo",
+            data: dataVal.split('-').reverse().join('/'),
+            dataRaw: dataVal,
             tipo: document.getElementById('f-tipo').value,
             escopo: document.getElementById('f-escopo').value,
             garantia: document.getElementById('f-garantia').value,
             maoObra: document.getElementById('f-mao-obra').value,
             empreitada: document.getElementById('f-empreitada').value,
-            materiais: materials,
-            dataForm: dataFormatada,
-            dataObj: dataStr
+            materiais: Array.from(document.querySelectorAll('.mat-grid')).map(row => ({
+                d: row.querySelector('.m-d').value,
+                q: row.querySelector('.m-q').value,
+                v: row.querySelector('.m-v').value
+            })).filter(m => m.d)
         };
 
-        if (currentEditingId) {
-            const index = db.entries.findIndex(e => e.id === currentEditingId);
-            db.entries[index] = entry;
-        } else {
-            db.entries.push(entry);
-        }
+        if(currentId) db.entries = db.entries.map(e => e.id === currentId ? entry : e);
+        else db.entries.push(entry);
 
         localStorage.setItem('hs_database', JSON.stringify(db));
         alert("Salvo com sucesso!");
@@ -222,107 +197,89 @@
     function renderList(filter = '') {
         const container = document.getElementById('client-list-container');
         container.innerHTML = '';
-        const filtered = db.entries.filter(e => 
-            (e.cliente || '').toLowerCase().includes(filter.toLowerCase()) || 
-            (e.osNum || '').toString().includes(filter)
-        ).reverse();
-
-        filtered.forEach(e => {
+        db.entries.filter(e => e.cliente.toLowerCase().includes(filter.toLowerCase()) || e.osNum.toString().includes(filter))
+        .reverse().forEach(e => {
             const div = document.createElement('div');
             div.className = 'list-item';
-            div.onclick = () => editEntry(e.id);
-            div.innerHTML = `<div><strong>${e.cliente || 'SEM NOME'}</strong><br><small>${e.tipo.toUpperCase()} - ${e.dataForm}</small></div><span class="os-badge">OS ${e.osNum}</span>`;
+            div.onclick = () => editEntry(e);
+            div.innerHTML = `<div><strong>${e.cliente}</strong><br><small>${e.tipo.toUpperCase()} - ${e.data}</small></div><span class="os-badge">OS ${e.osNum}</span>`;
             container.appendChild(div);
         });
     }
 
-    function filterClients() {
-        renderList(document.getElementById('main-search').value);
-    }
+    function filterClients() { renderList(document.getElementById('main-search').value); }
 
-    function editEntry(id) {
-        const e = db.entries.find(entry => entry.id === id);
-        currentEditingId = id;
-        document.getElementById('form-title').innerText = "Editar OS";
+    function editEntry(e) {
+        currentId = e.id;
         document.getElementById('os-number-display').innerText = e.osNum;
         document.getElementById('f-cliente').value = e.cliente;
         document.getElementById('f-endereco').value = e.endereco;
-        document.getElementById('f-data-os').value = e.dataObj;
+        document.getElementById('f-data-os').value = e.dataRaw;
         document.getElementById('f-tipo').value = e.tipo;
-        document.getElementById('f-escopo').value = e.escopo || '';
-        document.getElementById('f-garantia').value = e.garantia || '';
-        document.getElementById('f-mao-obra').value = e.maoObra || '';
-        document.getElementById('f-empreitada').value = e.empreitada || '';
+        document.getElementById('f-escopo').value = e.escopo;
+        document.getElementById('f-garantia').value = e.garantia;
+        document.getElementById('f-mao-obra').value = e.maoObra;
+        document.getElementById('f-empreitada').value = e.empreitada;
+        
+        const mc = document.getElementById('mat-container'); mc.innerHTML = '';
+        e.materiais.forEach(m => {
+            const div = document.createElement('div'); div.className = 'mat-grid';
+            div.innerHTML = `<input type="text" value="${m.d}" class="m-d"><input type="number" value="${m.q}" class="m-q"><input type="number" value="${m.v}" class="m-v">`;
+            mc.appendChild(div);
+        });
+        if(e.materiais.length === 0) addMaterialRow();
+
         toggleFormFields();
-        if(e.materiais.length > 0) {
-            const container = document.getElementById('mat-container');
-            container.innerHTML = '';
-            e.materiais.forEach(m => {
-                const div = document.createElement('div');
-                div.className = 'mat-grid';
-                div.innerHTML = `<input type="text" value="${m.desc}" class="m-desc"><input type="number" value="${m.qtd}" class="m-qtd"><input type="number" value="${m.val}" class="m-val">`;
-                container.appendChild(div);
-            });
-        }
         document.getElementById('btn-pdf').style.display = 'block';
         showScreen('screen-os-form');
     }
 
     function exportPDF() {
-        const e = db.entries.find(entry => entry.id === currentEditingId);
+        const e = db.entries.find(entry => entry.id === currentId);
         document.getElementById('p-cliente').innerText = e.cliente;
+        document.getElementById('p-data').innerText = e.data;
         document.getElementById('p-endereco').innerText = e.endereco;
-        document.getElementById('p-data').innerText = e.dataForm;
-        document.getElementById('pdf-os-num').innerText = e.osNum;
+        document.getElementById('p-os-num').innerText = e.osNum;
 
-        let contentHtml = '';
+        let html = '';
         if(e.tipo === 'orcamento') {
-            document.getElementById('pdf-tipo-title').innerText = "PROPOSTA DE SERVIÇO DE MANUTENÇÃO E INSTALAÇÃO ELÉTRICA ESPECIALIZADA";
-            const escopoBullets = (e.escopo || '').split('\n').filter(b => b.trim() !== '').map(b => `<li>${b}</li>`).join('');
-            const garantiaBullets = (e.garantia || '').split('\n').filter(b => b.trim() !== '').map(b => `<li>${b}</li>`).join('');
+            document.getElementById('pdf-tipo-txt').innerText = "PROPOSTA DE SERVIÇO DE MANUTENÇÃO E INSTALAÇÃO ELÉTRICA ESPECIALIZADA";
+            const escopo = e.escopo.split('\n').map(l => `<li>${l}</li>`).join('');
+            const garantia = e.garantia.split('\n').map(l => `<li>${l}</li>`).join('');
+            const vMo = parseFloat(e.maoObra || 0).toLocaleString('pt-BR', {minimumFractionDigits: 2});
+            const vEm = parseFloat(e.empreitada || 0).toLocaleString('pt-BR', {minimumFractionDigits: 2});
 
-            contentHtml = `
-                <div class="print-body">
-                    <div class="left-col">
-                        <div class="sub-title">ESCOPO DO TRABALHO:</div>
-                        <ul>${escopoBullets}</ul>
-                        <div class="sub-title">RESPONSÁVEL TÉCNICO:</div>
-                        <ul><li>Nome do Responsável: <strong>Higor Servelo</strong></li></ul>
-                    </div>
-                    <div class="right-col">
-                        <div class="sub-title">DIFERENCIAL E GARANTIA:</div>
-                        <ul>${garantiaBullets}</ul>
-                        <div class="sub-title">INVESTIMENTO:</div>
-                        <ul>
-                            <li><strong>Valor da mão de obra: R$ ${parseFloat(e.maoObra).toFixed(2).replace('.', ',')}</strong></li>
-                            <li>Nota: Este valor refere-se exclusivamente à mão de obra. Os materiais estão listados separadamente (conforme solicitado anteriormente) OU o valor total de <strong>empreitada</strong>, incluindo todos os materiais e mão de obra, é de <strong>R$ ${parseFloat(e.empreitada || 0).toFixed(2).replace('.', ',')}</strong> para o projeto completo.</li>
-                            <li>Condições de Pagamento: Adiantamento de 50% do valor da mão de obra (<strong>R$ ${parseFloat(e.maoObra / 2).toFixed(2).replace('.', ',')}</strong>) OU 50% do valor total da <strong>empreitada</strong> (<strong>R$ ${parseFloat((e.empreitada || 0) / 2).toFixed(2).replace('.', ',')}</strong>) antes de iniciar o serviço.</li>
-                        </ul>
-                    </div>
+            html = `
+            <div class="pdf-body">
+                <div class="pdf-col-left">
+                    <div class="pdf-section-title">Escopo do Trabalho:</div><ul>${escopo}</ul>
+                    <div class="pdf-section-title">Responsável Técnico:</div><ul><li>Nome do Responsável: <strong>Higor Servelo</strong></li></ul>
                 </div>
-            `;
+                <div class="pdf-col-right">
+                    <div class="pdf-section-title">Diferencial e Garantia:</div><ul>${garantia}</ul>
+                    <div class="pdf-section-title">Investimento:</div>
+                    <ul style="list-style:none; padding-left:0;">
+                        <li><strong>Valor da mão de obra: R$ ${vMo}</strong></li>
+                        <li style="margin-top:10px;">Nota: Valor referente à mão de obra. O custo total de <strong>empreitada</strong> (materiais e mão de obra) é de <strong>R$ ${vEm}</strong>.</li>
+                        <li style="margin-top:10px;">Pagamento: 50% de sinal e 50% na entrega.</li>
+                    </ul>
+                </div>
+            </div>`;
         } else {
-            document.getElementById('pdf-tipo-title').innerText = "LISTA DE MATERIAIS ELÉTRICOS - ATUALIZADA";
-            contentHtml = `<div style="font-size: 10.5pt;"><table class="inv-tabela"><thead><tr><th>Descrição do Material</th><th>Qtd</th><th>Unit.</th><th>Total</th></tr></thead><tbody>`;
-            let totalGeral = 0;
-            e.materiais.forEach(m => {
-                let sub = m.qtd * m.val;
-                totalGeral += sub;
-                contentHtml += `<tr><td>${m.desc}</td><td>${m.qtd} unid.</td><td>R$ ${parseFloat(m.val).toFixed(2).replace('.', ',')}</td><td>R$ ${sub.toFixed(2).replace('.', ',')}</td></tr>`;
+            document.getElementById('pdf-tipo-txt').innerText = "LISTA DE MATERIAIS ELÉTRICOS - ATUALIZADA";
+            let rows = '', total = 0;
+            e.materiais.forEach(m => { 
+                let sub = m.q * m.v; total += sub;
+                rows += `<tr><td>${m.d}</td><td>${m.q}</td><td>R$ ${parseFloat(m.v).toFixed(2)}</td><td>R$ ${sub.toFixed(2)}</td></tr>`;
             });
-            contentHtml += `</tbody><tfoot><tr style="font-weight:bold; background-color: #f2f2f2;"><td colspan="3" style="text-align:right">TOTAL ESTIMADO</td><td>R$ ${totalGeral.toFixed(2).replace('.', ',')}</td></tr></tfoot></table></div>`;
+            html = `<table class="pdf-table"><thead><tr><th>Descrição</th><th>Qtd</th><th>Unit.</th><th>Total</th></tr></thead><tbody>${rows}</tbody><tfoot><tr style="font-weight:bold; background:#eee;"><td colspan="3" style="text-align:right">TOTAL ESTIMADO</td><td>R$ ${total.toFixed(2)}</td></tr></tfoot></table>`;
         }
+
+        document.getElementById('p-corpo').innerHTML = html;
+        const opt = { margin: 0, filename: `OS_${e.osNum}_HS.pdf`, image: { type: 'jpeg', quality: 0.98 }, html2canvas: { scale: 2, scrollY: 0 }, jsPDF: { unit: 'mm', format: 'a4', orientation: 'portrait' } };
         
-        document.getElementById('p-conteudo').innerHTML = contentHtml;
-        const element = document.getElementById('pdf-template');
         document.getElementById('print-area').style.display = 'block';
-        
-        html2pdf().from(element).set({
-            margin: 0,
-            filename: `OS_${e.osNum}_HS.pdf`,
-            html2canvas: { scale: 3, y: 0 },
-            jsPDF: { unit: 'mm', format: 'a4', orientation: 'portrait' }
-        }).save().then(() => {
+        html2pdf().from(document.getElementById('pdf-template')).set(opt).save().then(() => {
             document.getElementById('print-area').style.display = 'none';
         });
     }
