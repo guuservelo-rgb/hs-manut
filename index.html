@@ -3,14 +3,13 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>HS - Gestão e Orçamentos</title>
+    <title>HS - Gestão & Orçamentos</title>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/html2pdf.js/0.10.1/html2pdf.bundle.min.js"></script>
     <style>
         :root { --primary: #004a8d; --accent: #ff9800; --bg: #f4f7f6; --text: #333; --border: #ccd; }
         body { font-family: 'Segoe UI', system-ui, sans-serif; background: var(--bg); color: var(--text); margin: 0; padding: 0; }
         .container { max-width: 950px; margin: 0 auto; padding: 15px; }
         
-        /* UI Elements */
         .card { background: white; padding: 20px; border-radius: 15px; box-shadow: 0 4px 15px rgba(0,0,0,0.1); margin-bottom: 20px; border: 1px solid #e0e0e0; }
         h1, h2 { color: var(--primary); text-align: center; }
         .btn { background: var(--primary); color: white; border: none; padding: 12px 20px; border-radius: 8px; cursor: pointer; font-weight: bold; width: 100%; margin: 5px 0; font-size: 16px; transition: 0.3s; }
@@ -18,33 +17,33 @@
         .btn-accent { background: var(--accent); }
         .btn-outline { background: transparent; border: 2px solid var(--primary); color: var(--primary); }
         
-        input, textarea, select { width: 100%; padding: 12px; margin: 8px 0; border: 1px solid #ddd; border-radius: 8px; box-sizing: border-box; font-size: 16px; }
-        .search-box { position: sticky; top: 10px; z-index: 100; }
+        .search-container { display: flex; gap: 10px; align-items: center; position: sticky; top: 10px; z-index: 100; background: var(--bg); padding: 10px 0; }
+        .search-container input { margin: 0; flex-grow: 1; }
+        .btn-search { width: auto; padding: 12px 25px; margin: 0; }
+
+        label { display: block; font-weight: bold; color: var(--primary); margin-top: 15px; margin-bottom: 2px; }
+        input, textarea, select { width: 100%; padding: 12px; margin: 5px 0 15px 0; border: 1px solid #ddd; border-radius: 8px; box-sizing: border-box; font-size: 16px; }
         
-        /* Navigation */
         .screen { display: none; animation: slideUp 0.3s ease-out; }
         .active { display: block; }
         @keyframes slideUp { from { transform: translateY(20px); opacity: 0; } to { transform: translateY(0); opacity: 1; } }
 
-        /* List Items */
         .list-item { background: #fff; border-left: 5px solid var(--primary); padding: 15px; margin: 10px 0; border-radius: 8px; cursor: pointer; display: flex; justify-content: space-between; align-items: center; box-shadow: 0 2px 8px rgba(0,0,0,0.06); }
         .os-badge { background: #eee; padding: 4px 8px; border-radius: 4px; font-size: 12px; font-weight: bold; }
 
-        /* Grid for Materials */
         .mat-grid { display: grid; grid-template-columns: 2fr 1fr 1fr; gap: 8px; align-items: center; margin-bottom: 10px; }
 
-        /* Print Hidden Area */
         #print-area { display: none; }
-        .print-page { width: 210mm; padding: 15mm; background: white; color: black; font-family: 'Arial', sans-serif; box-sizing: border-box; }
-        .print-header { text-align: center; border-bottom: 1px solid #000; margin-bottom: 10px; }
-        .print-header h1 { margin: 0; font-size: 26pt; color: #004a8d; font-weight: bold; }
-        .print-header p { margin: 5px 0; font-size: 14pt; }
+        .print-page { width: 210mm; padding: 10mm 15mm; background: white; color: black; font-family: 'Arial', sans-serif; box-sizing: border-box; }
+        .print-header { text-align: center; border-bottom: 1px solid #000; margin-bottom: 15px; }
+        .print-header h1 { margin: 0; font-size: 24pt; color: #004a8d; font-weight: bold; }
+        .print-header p { margin: 5px 0; font-size: 12pt; font-weight: bold; }
         .p-info-block { display: flex; flex-wrap: wrap; font-size: 11pt; margin-bottom: 15px; line-height: 1.4; border-bottom: 1px solid #000; padding-bottom: 10px; }
         .p-info-block div { width: 49%; }
 
         .print-body { display: flex; justify-content: space-between; gap: 20px; font-size: 10.5pt; line-height: 1.5; margin-bottom: 20px; }
-        .left-col { width: 63%; }
-        .right-col { width: 35%; }
+        .left-col { width: 62%; }
+        .right-col { width: 36%; }
         .print-body h3 { font-size: 11.5pt; font-weight: bold; margin-bottom: 5px; margin-top: 15px; border-bottom: 1px solid #ddd; padding-bottom: 3px; color: #000; }
         .print-body ul { padding-left: 15px; margin-top: 0; margin-bottom: 10px; list-style-type: disc; }
         .print-body li { margin-bottom: 5px; }
@@ -58,15 +57,14 @@
 <body>
 
 <div class="container">
-    
     <div id="screen-home" class="screen active">
         <h1>HS - GESTÃO & ORÇAMENTOS</h1>
-        <div class="card search-box">
-            <input type="text" id="main-search" placeholder="🔍 Pesquisar cliente ou Nº da OS..." onkeyup="filterClients()">
+        <div class="card search-container">
+            <input type="text" id="main-search" placeholder="Pesquisar cliente ou Nº da OS...">
+            <button class="btn btn-search" onclick="filterClients()">Pesquisar</button>
         </div>
         <button class="btn" onclick="openNewOS()">+ Criar Nova Ordem de Serviço</button>
-        <div id="client-list-container">
-            </div>
+        <div id="client-list-container"></div>
     </div>
 
     <div id="screen-os-form" class="screen card">
@@ -75,48 +73,57 @@
             <span class="os-badge">OS Nº: <span id="os-number-display">0000</span></span>
         </div>
         
-        <input type="text" id="f-cliente" placeholder="Nome do Cliente (Ex: Quintal Roofotp)">
-        <input type="text" id="f-endereco" placeholder="Endereço (Ex: Rua Euclides Pacheco 233...)">
-        <input type="text" id="f-responsavel" placeholder="Responsável Técnico" value="Higor Servelo">
-        <input type="date" id="f-data-os" placeholder="Data de Elaboração" value="">
+        <label>Cliente</label>
+        <input type="text" id="f-cliente" placeholder="Nome do Cliente">
+        <label>Endereço</label>
+        <input type="text" id="f-endereco" placeholder="Endereço Completo">
+        <label>Responsável Técnico</label>
+        <input type="text" id="f-responsavel" value="Higor Servelo" readonly>
+        <label>Data de Elaboração</label>
+        <input type="date" id="f-data-os">
         
         <hr>
-        <h3>Tipo de Documento</h3>
+        <label>Tipo de Documento</label>
         <select id="f-tipo" onchange="toggleFormFields()">
             <option value="orcamento">Proposta de Orçamento</option>
             <option value="lista">Lista de Materiais</option>
         </select>
 
         <div id="fields-orcamento">
-            <textarea id="f-escopo" rows="6" placeholder="Escopo do Trabalho (um tópico por linha, sem '-' ou '•'). AI pré-populada com exemplos:"></textarea>
-            <textarea id="f-garantia" rows="3" placeholder="Diferenciais e Garantia (um tópico por linha)..."></textarea>
-            <input type="number" id="f-mao-obra" placeholder="Valor Mão de Obra e Locomoção (R$)">
-            <input type="number" id="f-empreitada" placeholder="Valor Total Empreitada (Materiais + Mão de Obra) (R$) (Opcional)">
+            <label>Escopo do Trabalho</label>
+            <textarea id="f-escopo" rows="6" placeholder="Descreva os serviços realizados..."></textarea>
+            <label>Diferencial e Garantia</label>
+            <textarea id="f-garantia" rows="3" placeholder="Garantia e diferenciais..."></textarea>
+            
+            <label>Valor da Mão de Obra (R$)</label>
+            <input type="number" id="f-mao-obra" placeholder="Apenas valor numérico">
+            
+            <label>Valor Total da Empreitada (Materiais + Mão de Obra) (R$)</label>
+            <input type="number" id="f-empreitada" placeholder="Apenas valor numérico">
         </div>
 
         <div id="fields-lista" style="display:none;">
             <div id="mat-container">
                 <div class="mat-grid">
-                    <input type="text" placeholder="Material (Ex: Fita LED 3000K)" class="m-desc">
+                    <input type="text" placeholder="Material" class="m-desc">
                     <input type="number" placeholder="Qtd" class="m-qtd">
                     <input type="number" placeholder="V. Unit" class="m-val">
                 </div>
             </div>
-            <button class="btn btn-outline" onclick="addMaterialRow()">+ Adicionar Item à Lista</button>
+            <button class="btn btn-outline" onclick="addMaterialRow()">+ Adicionar Item</button>
         </div>
 
         <button class="btn" onclick="saveData()">💾 Salvar OS no iPhone</button>
         <button class="btn btn-accent" id="btn-pdf" style="display:none;" onclick="exportPDF()">📄 Gerar PDF Profissional</button>
-        <button class="btn btn-outline" onclick="showScreen('screen-home')">Voltar à Página Inicial</button>
+        <button class="btn btn-outline" onclick="showScreen('screen-home')">Voltar</button>
     </div>
-
 </div>
 
 <div id="print-area">
     <div id="pdf-template" class="print-page">
         <div class="print-header">
             <h1>HS MANUTENÇÃO ELÉTRICA</h1>
-            <p id="pdf-tipo-title">PROPOSTA DE SERVIÇO</p>
+            <p id="pdf-tipo-title">PROPOSTA DE SERVIÇO DE MANUTENÇÃO E INSTALAÇÃO ELÉTRICA ESPECIALIZADA</p>
         </div>
         <div class="p-info-block">
             <div><strong>Cliente:</strong> <span id="p-cliente"></span></div>
@@ -132,7 +139,6 @@
     let db = JSON.parse(localStorage.getItem('hs_database')) || { lastOS: 1000, entries: [] };
     let currentEditingId = null;
 
-    // Set initial date to today
     document.getElementById('f-data-os').valueAsDate = new Date();
 
     function showScreen(id) {
@@ -153,18 +159,11 @@
     function clearForm() {
         document.getElementById('f-cliente').value = '';
         document.getElementById('f-endereco').value = '';
-        document.getElementById('f-responsavel').value = 'Higor Servelo';
         document.getElementById('f-data-os').valueAsDate = new Date();
-        document.getElementById('f-tipo').value = 'orcamento';
-        document.getElementById('fields-orcamento').style.display = 'block';
-        document.getElementById('fields-lista').style.display = 'none';
-
-        // AI Pré-populada para exemplo
-        document.getElementById('f-escopo').value = "Substituição de 2 lâmpadas LED e reparos menores no banheiro feminino.\nReparo e substituição de duas fontes de LED (letreiro e espelho) em forro de drywall com acesso restrito.\nSubstituição de 2 spots LED de sobrepor no corredor de circulação.\nInstalação completa de dois pontos de iluminação com arandela na parede debaixo da escada, utilizando lâmpadas convencionais rosca e27.\nRevisão e reparo técnico de 4 fritadeiras elétricas industriais.\nTempo de Execução: 2 dias inteiros de serviço (com ajuste de horário para não interferir na operação do bar).";
-        document.getElementById('f-garantia').value = "Conformidade com normas NBR 5410.\nUso de conectores de precisão e isolamento de alta durabilidade.\nSistema de aterramento verificado e garantia de segurança rigorosa.";
-        document.getElementById('f-mao-obra').value = '1300';
-        document.getElementById('f-empreitada').value = '2950';
-
+        document.getElementById('f-escopo').value = "";
+        document.getElementById('f-garantia').value = "";
+        document.getElementById('f-mao-obra').value = '';
+        document.getElementById('f-empreitada').value = '';
         document.getElementById('mat-container').innerHTML = `<div class="mat-grid"><input type="text" placeholder="Material" class="m-desc"><input type="number" placeholder="Qtd" class="m-qtd"><input type="number" placeholder="V. Unit" class="m-val"></div>`;
     }
 
@@ -182,7 +181,6 @@
     }
 
     function saveData() {
-        const tipo = document.getElementById('f-tipo').value;
         const dataStr = document.getElementById('f-data-os').value;
         const [year, month, day] = dataStr.split('-');
         const dataFormatada = `${day}/${month}/${year}`;
@@ -198,8 +196,8 @@
             osNum: currentEditingId ? document.getElementById('os-number-display').innerText : ++db.lastOS,
             cliente: document.getElementById('f-cliente').value,
             endereco: document.getElementById('f-endereco').value,
-            responsavel: document.getElementById('f-responsavel').value,
-            tipo: tipo,
+            responsavel: "Higor Servelo",
+            tipo: document.getElementById('f-tipo').value,
             escopo: document.getElementById('f-escopo').value,
             garantia: document.getElementById('f-garantia').value,
             maoObra: document.getElementById('f-mao-obra').value,
@@ -217,14 +215,13 @@
         }
 
         localStorage.setItem('hs_database', JSON.stringify(db));
-        alert("OS salva com sucesso no seu iPhone!");
+        alert("Salvo com sucesso!");
         showScreen('screen-home');
     }
 
     function renderList(filter = '') {
         const container = document.getElementById('client-list-container');
         container.innerHTML = '';
-        
         const filtered = db.entries.filter(e => 
             (e.cliente || '').toLowerCase().includes(filter.toLowerCase()) || 
             (e.osNum || '').toString().includes(filter)
@@ -234,13 +231,7 @@
             const div = document.createElement('div');
             div.className = 'list-item';
             div.onclick = () => editEntry(e.id);
-            div.innerHTML = `
-                <div>
-                    <strong>${e.cliente || 'SEM NOME'}</strong><br>
-                    <small>${e.tipo.toUpperCase()} - ${e.dataForm}</small>
-                </div>
-                <span class="os-badge">OS ${e.osNum}</span>
-            `;
+            div.innerHTML = `<div><strong>${e.cliente || 'SEM NOME'}</strong><br><small>${e.tipo.toUpperCase()} - ${e.dataForm}</small></div><span class="os-badge">OS ${e.osNum}</span>`;
             container.appendChild(div);
         });
     }
@@ -252,35 +243,27 @@
     function editEntry(id) {
         const e = db.entries.find(entry => entry.id === id);
         currentEditingId = id;
-        
-        document.getElementById('form-title').innerText = "Editar Ordem de Serviço";
+        document.getElementById('form-title').innerText = "Editar OS";
         document.getElementById('os-number-display').innerText = e.osNum;
         document.getElementById('f-cliente').value = e.cliente;
         document.getElementById('f-endereco').value = e.endereco;
-        document.getElementById('f-responsavel').value = e.responsavel || 'Higor Servelo';
         document.getElementById('f-data-os').value = e.dataObj;
         document.getElementById('f-tipo').value = e.tipo;
         document.getElementById('f-escopo').value = e.escopo || '';
         document.getElementById('f-garantia').value = e.garantia || '';
         document.getElementById('f-mao-obra').value = e.maoObra || '';
         document.getElementById('f-empreitada').value = e.empreitada || '';
-        
         toggleFormFields();
-        
         if(e.materiais.length > 0) {
             const container = document.getElementById('mat-container');
             container.innerHTML = '';
             e.materiais.forEach(m => {
                 const div = document.createElement('div');
                 div.className = 'mat-grid';
-                div.innerHTML = `
-                    <input type="text" value="${m.desc}" class="m-desc">
-                    <input type="number" value="${m.qtd}" class="m-qtd">
-                    <input type="number" value="${m.val}" class="m-val">`;
+                div.innerHTML = `<input type="text" value="${m.desc}" class="m-desc"><input type="number" value="${m.qtd}" class="m-qtd"><input type="number" value="${m.val}" class="m-val">`;
                 container.appendChild(div);
             });
         }
-
         document.getElementById('btn-pdf').style.display = 'block';
         showScreen('screen-os-form');
     }
@@ -304,55 +287,46 @@
                         <div class="sub-title">ESCOPO DO TRABALHO:</div>
                         <ul>${escopoBullets}</ul>
                         <div class="sub-title">RESPONSÁVEL TÉCNICO:</div>
-                        <ul><li>Nome do Responsável: ${e.responsavel}</li></ul>
+                        <ul><li>Nome do Responsável: <strong>Higor Servelo</strong></li></ul>
                     </div>
                     <div class="right-col">
                         <div class="sub-title">DIFERENCIAL E GARANTIA:</div>
                         <ul>${garantiaBullets}</ul>
                         <div class="sub-title">INVESTIMENTO:</div>
                         <ul>
-                            <li>Mão de Obra Especializada e Locomoção: R$ ${parseFloat(e.maoObra).toFixed(2).replace('.', ',')}</li>
-                            <li>Nota: Valor refere-se exclusivamente à mão de obra e custos de locomoção. Os materiais de alta qualidade são responsabilidade do cliente efetuar a compra, OU o valor total da empreitada, incluindo materiais, é de R$ ${parseFloat(e.empreitada || 0).toFixed(2).replace('.', ',')} para o projeto completo.</li>
-                            <li>Condições de Pagamento: Adiantamento de 50% do valor da mão de obra (R$ ${parseFloat(e.maoObra / 2).toFixed(2).replace('.', ',')}) OU 50% do valor total da empreitada (R$ ${parseFloat((e.empreitada || 0) / 2).toFixed(2).replace('.', ',')}) antes de iniciar o serviço. O restante será pago após finalização e aceitação.</li>
+                            <li><strong>Valor da mão de obra: R$ ${parseFloat(e.maoObra).toFixed(2).replace('.', ',')}</strong></li>
+                            <li>Nota: Este valor refere-se exclusivamente à mão de obra. Os materiais estão listados separadamente (conforme solicitado anteriormente) OU o valor total de <strong>empreitada</strong>, incluindo todos os materiais e mão de obra, é de <strong>R$ ${parseFloat(e.empreitada || 0).toFixed(2).replace('.', ',')}</strong> para o projeto completo.</li>
+                            <li>Condições de Pagamento: Adiantamento de 50% do valor da mão de obra (<strong>R$ ${parseFloat(e.maoObra / 2).toFixed(2).replace('.', ',')}</strong>) OU 50% do valor total da <strong>empreitada</strong> (<strong>R$ ${parseFloat((e.empreitada || 0) / 2).toFixed(2).replace('.', ',')}</strong>) antes de iniciar o serviço.</li>
                         </ul>
                     </div>
                 </div>
-                <p style="font-size: 10.5pt; text-align: center; margin-top: 30px;">Agradecemos a oportunidade e ficamos à disposição para esclarecimentos.<br>Atenciosamente, Higor Servelo.</p>
             `;
         } else {
             document.getElementById('pdf-tipo-title').innerText = "LISTA DE MATERIAIS ELÉTRICOS - ATUALIZADA";
-            contentHtml = `
-                <div style="font-size: 10.5pt;">
-                    <h3 style="margin-bottom: 5px; color: #000;">RESPONSÁVEL TÉCNICO: Higor Servelo</h3>
-                    <table class="inv-tabela"><thead><tr><th>Item/Descrição do Material</th><th>Qtd</th><th>Valor Unit.</th><th>Total (Estd.)</th></tr></thead><tbody>`;
+            contentHtml = `<div style="font-size: 10.5pt;"><table class="inv-tabela"><thead><tr><th>Descrição do Material</th><th>Qtd</th><th>Unit.</th><th>Total</th></tr></thead><tbody>`;
             let totalGeral = 0;
-            e.materiais.forEach((m, i) => {
+            e.materiais.forEach(m => {
                 let sub = m.qtd * m.val;
                 totalGeral += sub;
                 contentHtml += `<tr><td>${m.desc}</td><td>${m.qtd} unid.</td><td>R$ ${parseFloat(m.val).toFixed(2).replace('.', ',')}</td><td>R$ ${sub.toFixed(2).replace('.', ',')}</td></tr>`;
             });
-            contentHtml += `</tbody><tfoot><tr style="font-weight:bold; background-color: #f2f2f2;"><td colspan="3" style="text-align:right">TOTAL ESTIMADO</td><td>R$ ${totalGeral.toFixed(2).replace('.', ',')}</td></tr></tfoot></table>
-                </div>
-                <p style="font-size: 10.5pt; text-align: center; margin-top: 30px;">Gerado por HS Manutenção Elétrica.</p>
-            `;
+            contentHtml += `</tbody><tfoot><tr style="font-weight:bold; background-color: #f2f2f2;"><td colspan="3" style="text-align:right">TOTAL ESTIMADO</td><td>R$ ${totalGeral.toFixed(2).replace('.', ',')}</td></tr></tfoot></table></div>`;
         }
         
         document.getElementById('p-conteudo').innerHTML = contentHtml;
-        
         const element = document.getElementById('pdf-template');
         document.getElementById('print-area').style.display = 'block';
         
         html2pdf().from(element).set({
             margin: 0,
-            filename: `OS_${e.osNum}_${e.cliente.replace(/\s+/g, '_')}.pdf`,
-            html2canvas: { scale: 3 },
+            filename: `OS_${e.osNum}_HS.pdf`,
+            html2canvas: { scale: 3, y: 0 },
             jsPDF: { unit: 'mm', format: 'a4', orientation: 'portrait' }
         }).save().then(() => {
             document.getElementById('print-area').style.display = 'none';
         });
     }
 
-    // Inicialização
     renderList();
 </script>
 </body>
