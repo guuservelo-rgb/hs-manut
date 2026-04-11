@@ -8,16 +8,17 @@
     <link rel="apple-touch-icon" href="apple-touch-icon.png">
 
     <script src="https://cdnjs.cloudflare.com/ajax/libs/html2pdf.js/0.10.1/html2pdf.bundle.min.js"></script>
-    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
     <style>
-        :root { --primary: #004a8d; --accent: #ff9800; --bg: #f4f7f6; --text: #333; --danger: #d9534f; --success: #28a745; }
+        :root { --primary: #004a8d; --accent: #ff9800; --bg: #f4f7f6; --text: #333; --danger: #d9534f; }
         body { font-family: 'Segoe UI', system-ui, sans-serif; background: var(--bg); color: var(--text); margin: 0; padding: 0; }
         .container { max-width: 950px; margin: 0 auto; padding: 15px; }
         
+        /* Logo do App */
         .app-header { text-align: center; margin-bottom: 20px; }
         .app-header img { max-height: 70px; margin-bottom: 10px; border-radius: 8px; }
         .app-header h1 { margin: 0; font-size: 24px; color: var(--primary); }
 
+        /* Menu de Navegação */
         .nav-container { display: flex; gap: 8px; margin-bottom: 20px; overflow-x: auto; padding-bottom: 5px; }
         .nav-btn { flex: 1; min-width: 85px; background: #e0e0e0; color: var(--primary); border: none; padding: 12px 5px; border-radius: 8px; font-weight: bold; cursor: pointer; text-align: center; font-size: 14px; white-space: nowrap; }
         .nav-btn:hover, .nav-btn.active-nav { background: var(--primary); color: white; }
@@ -29,32 +30,68 @@
         .btn-danger { background: var(--danger); }
         .btn-outline { background: transparent; border: 2px solid var(--primary); color: var(--primary); }
         
-        input, textarea, select { width: 100%; padding: 12px; margin: 5px 0 10px 0; border: 1px solid #ddd; border-radius: 8px; box-sizing: border-box; font-size: 16px; }
-        label { font-weight: bold; color: var(--primary); display: block; margin-top: 10px; }
+        .search-container { display: flex; gap: 10px; margin-bottom: 20px; }
+        .search-container input { flex-grow: 1; padding: 12px; border-radius: 8px; border: 1px solid #ddd; }
+        .btn-search { width: auto; padding: 0 20px; }
 
+        label { display: block; font-weight: bold; color: var(--primary); margin-top: 10px; }
+        input[type="text"], input[type="number"], input[type="date"], textarea, select { width: 100%; padding: 12px; margin: 5px 0 10px 0; border: 1px solid #ddd; border-radius: 8px; box-sizing: border-box; font-size: 16px; }
+        
         .screen { display: none; }
         .active { display: block; }
 
         .list-item { background: #fff; border-left: 5px solid var(--primary); padding: 15px; margin: 10px 0; border-radius: 8px; cursor: pointer; display: flex; justify-content: space-between; align-items: center; box-shadow: 0 2px 8px rgba(0,0,0,0.06); }
         .os-badge { background: #eee; padding: 4px 8px; border-radius: 4px; font-size: 12px; font-weight: bold; }
         
-        .mat-grid { display: grid; grid-template-columns: 2fr 1fr 1fr; gap: 8px; margin-bottom: 10px; }
+        /* Design Lixeira E-mail */
+        .del-btn { background: transparent; color: #a0a0a0; border: none; cursor: pointer; padding: 5px; transition: 0.2s; display: flex; align-items: center; justify-content: center; }
+        .del-btn:hover { color: var(--danger); transform: scale(1.1); }
 
-        /* FINANCEIRO */
-        .fin-summary { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; margin-bottom: 20px; }
-        .fin-card { padding: 15px; border-radius: 10px; text-align: center; color: white; }
-        .bg-ganho { background: var(--success); }
-        .bg-pendente { background: var(--accent); }
-        .chart-container { height: 200px; margin-bottom: 20px; }
+        /* Numeração da Lista de Materiais no HTML */
+        #mat-container { counter-reset: mat-counter; }
+        .mat-grid { display: grid; grid-template-columns: 2fr 1fr 1fr; gap: 8px; margin-bottom: 10px; position: relative; padding-left: 25px; }
+        .mat-grid::before { counter-increment: mat-counter; content: counter(mat-counter) "."; position: absolute; left: 0; top: 15px; font-weight: bold; color: var(--primary); }
 
-        /* PDF - FIX: REMOVIDO ESPAÇAMENTO EXCESSIVO */
+        /* Badges de Status */
+        .badge-status { padding: 4px 8px; border-radius: 4px; font-size: 12px; font-weight: bold; color: white; display: inline-block; margin-top: 5px; }
+        .st-aguardando { background: #ff9800; } /* Laranja */
+        .st-aprovado { background: #ff9800; } /* Laranja */
+        .st-reprovado { background: #f44336; } /* Vermelho */
+        .st-iniciada { background: #8bc34a; } /* Verde claro */
+        .st-concluida { background: #2196f3; } /* Azul */
+        .st-cancelada { background: #9e9e9e; } /* Cinza */
+
+        /* Painel de Status no Formulário */
+        .status-panel { background: #f9f9f9; padding: 15px; border-radius: 8px; border: 1px solid #ddd; margin-bottom: 15px; }
+        .status-btn-group { display: flex; gap: 5px; flex-wrap: wrap; margin-top: 10px; }
+        .status-btn-group button { flex: 1; min-width: 140px; padding: 10px; font-size: 14px; margin: 0; }
+        .radio-group { margin: 10px 0; }
+        .radio-group label { display: inline; font-weight: normal; margin-right: 15px; color: var(--text); }
+
+        /* --- ESTILO PDF --- */
         #print-area { position: absolute; left: -9999px; top: 0; }
-        .pdf-content { width: 190mm; margin: 0; padding: 10mm; background: white; color: black; font-family: Arial, sans-serif; }
-        .pdf-header { text-align: center; border-bottom: 2px solid #004a8d; margin-bottom: 15px; padding-bottom: 10px; }
-        .pdf-header img { max-height: 70px; display: block; margin: 0 auto 5px; }
-        .pdf-table { width: 100%; border-collapse: collapse; margin-top: 10px; }
-        .pdf-table th { background: #f2f2f2; border: 1px solid #ccc; padding: 8px; text-align: left; font-size: 12px; }
-        .pdf-table td { border: 1px solid #ccc; padding: 8px; font-size: 12px; }
+        .pdf-content { width: 210mm; height: 297mm; padding: 10mm 15mm; background: white; color: black; font-family: Arial, sans-serif; box-sizing: border-box; display: flex; flex-direction: column; }
+        .pdf-header { text-align: center; border-bottom: 2px solid #000; margin-bottom: 10px; padding-bottom: 10px; }
+        .pdf-header img { max-height: 60px; margin-bottom: 5px; }
+        .pdf-header h1 { margin: 0; font-size: 24pt; color: #004a8d; font-weight: bold; }
+        .pdf-header p { margin: 5px 0; font-size: 11pt; font-weight: bold; text-transform: uppercase; }
+        
+        .pdf-info { display: flex; flex-wrap: wrap; font-size: 11pt; border-bottom: 1px solid #000; padding: 10px 0; margin-bottom: 15px; }
+        .pdf-info div { width: 50%; margin-bottom: 5px; }
+
+        .pdf-body { display: flex; justify-content: space-between; gap: 20px; font-size: 10pt; line-height: 1.4; flex-grow: 1; }
+        .pdf-col-left { width: 62%; }
+        .pdf-col-right { width: 36%; }
+        
+        .pdf-section-title { font-weight: bold; text-transform: uppercase; margin-top: 15px; margin-bottom: 5px; font-size: 11pt; border-bottom: 1px solid #ccc; }
+        .pdf-body ul { padding-left: 18px; margin: 0; list-style-type: disc; }
+        .pdf-body li { margin-bottom: 5px; }
+
+        .pdf-table { width: 100%; border-collapse: collapse; margin-top: 15px; font-size: 10pt; }
+        .pdf-table th, .pdf-table td { border: 1px solid #ccc; padding: 8px; text-align: left; }
+        .pdf-table th { background: #f2f2f2; }
+
+        .pdf-footer { text-align: center; font-size: 11pt; margin-top: auto; padding-bottom: 10mm; }
     </style>
 </head>
 <body>
@@ -68,78 +105,87 @@
     <div class="nav-container">
         <button id="nav-home" class="nav-btn active-nav" onclick="showScreen('screen-home')">Início</button>
         <button id="nav-clientes" class="nav-btn" onclick="showScreen('screen-clientes')">Clientes</button>
-        <button id="nav-os" class="nav-btn" onclick="showScreen('screen-os-list')">OS</button>
+        <button id="nav-os" class="nav-btn" onclick="showScreen('screen-os-list')">Ordens de Serviço</button>
         <button id="nav-orcamentos" class="nav-btn" onclick="showScreen('screen-orcamentos')">Orçamentos</button>
-        <button id="nav-financeiro" class="nav-btn" onclick="showScreen('screen-financeiro')">Financeiro</button>
     </div>
 
     <div id="screen-home" class="screen active">
+        <div class="card search-container">
+            <input type="text" id="main-search" placeholder="Pesquisar cliente ou OS...">
+            <button class="btn btn-search" onclick="filterHome()">Pesquisar</button>
+        </div>
         <button class="btn" onclick="openNewOS()">+ Criar Nova Ordem de Serviço</button>
         <h3>Recentes</h3>
         <div id="home-list-container"></div>
     </div>
 
-    <div id="screen-financeiro" class="screen">
-        <div class="fin-summary">
-            <div class="fin-card bg-ganho"><small>Recebido</small><br><strong id="fin-total-pago">R$ 0,00</strong></div>
-            <div class="fin-card bg-pendente"><small>Pendente</small><br><strong id="fin-total-pendente">R$ 0,00</strong></div>
-        </div>
-        <div class="card">
-            <h3>Balanço</h3>
-            <div class="chart-container"><canvas id="chartLucro"></canvas></div>
-        </div>
-        <div class="card">
-            <h3>Registrar Gasto</h3>
-            <input type="file" accept="image/*" capture="camera" id="f-nota-foto">
-            <select id="f-nota-cat">
-                <option value="Combustível">⛽ Combustível</option>
-                <option value="Refeição">🍽️ Refeição</option>
-                <option value="Material">🛠️ Material</option>
-            </select>
-            <input type="number" id="f-nota-valor" placeholder="Valor R$">
-            <button class="btn btn-danger" onclick="addGasto()">Salvar Custo</button>
-        </div>
-    </div>
-
     <div id="screen-clientes" class="screen card">
-        <h2>Meus Clientes</h2>
+        <h2>Lista de Clientes</h2>
         <div id="list-clientes-container"></div>
     </div>
 
+    <div id="screen-cliente-detalhes" class="screen card">
+        <h2 id="detalhe-nome-cliente">Nome do Cliente</h2>
+        <p><strong>Endereço Base:</strong> <span id="detalhe-end-cliente"></span></p>
+        <button class="btn btn-outline" onclick="showScreen('screen-clientes')" style="margin-bottom: 20px;">Voltar para Clientes</button>
+        <h3>Histórico de Ordens de Serviço</h3>
+        <div id="list-cliente-os"></div>
+    </div>
+
     <div id="screen-os-list" class="screen card">
-        <h2>Todas as OS</h2>
+        <h2>Todas as Ordens de Serviço</h2>
         <div id="list-todas-os-container"></div>
     </div>
 
     <div id="screen-orcamentos" class="screen card">
-        <h2>Orçamentos Salvos</h2>
+        <h2>Todos os Orçamentos</h2>
         <div id="list-orcamentos-container"></div>
     </div>
 
     <div id="screen-os-form" class="screen card">
-        <h2 id="form-title">Editar Documento</h2>
+        <h2 id="form-title">Ordem de Serviço</h2>
         <div style="text-align: right;"><span class="os-badge">OS Nº: <span id="os-number-display">0000</span></span></div>
         
-        <label>Status Financeiro</label>
-        <select id="f-pago">
-            <option value="nao">Pendente</option>
-            <option value="sim">Pago</option>
-        </select>
+        <div class="status-panel">
+            <h3 style="margin-top:0; color:#333;">Controle de Status</h3>
+            <div style="text-align:center; margin-bottom:10px;">
+                <span id="display-status" class="badge-status st-aguardando">Aguardando Aprovação</span>
+            </div>
+            
+            <div class="radio-group">
+                <strong style="color:var(--primary); display:block; margin-bottom:5px;">Tipo de Serviço Autorizado:</strong>
+                <input type="radio" id="auth-mao" name="f-auth" value="Mão de Obra">
+                <label for="auth-mao">Aprovado Mão de obra</label>
+                <input type="radio" id="auth-emp" name="f-auth" value="Empreitada">
+                <label for="auth-emp">Aprovado Empreitada</label>
+            </div>
 
+            <div class="status-btn-group">
+                <button class="btn btn-outline" onclick="setStatus('aprovado')">Aprovar Orçamento</button>
+                <button class="btn" style="background:#8bc34a;" onclick="setStatus('iniciada')">Iniciar OS</button>
+                <button class="btn" style="background:#2196f3;" onclick="setStatus('concluida')">Concluir OS</button>
+                <button class="btn btn-danger" onclick="setStatus('reprovado')">Reprovar Orçamento</button>
+                <button class="btn btn-outline" style="border-color:#9e9e9e; color:#9e9e9e;" onclick="setStatus('cancelada')">Cancelar OS</button>
+            </div>
+            <input type="hidden" id="f-status" value="aguardando">
+        </div>
+        
         <label>Cliente</label><input type="text" id="f-cliente">
         <label>Endereço</label><input type="text" id="f-endereco">
         <label>Data</label><input type="date" id="f-data-os">
         
-        <label>Tipo</label>
+        <label>Tipo de Documento</label>
         <select id="f-tipo" onchange="toggleFormFields()">
             <option value="orcamento">Proposta de Orçamento</option>
             <option value="lista">Lista de Materiais</option>
         </select>
 
         <div id="fields-orcamento">
-            <label>Escopo</label><textarea id="f-escopo" rows="8"></textarea>
-            <label>Mão de Obra (R$)</label><input type="number" id="f-mao-obra">
-            <label>Empreitada Total (R$)</label><input type="number" id="f-empreitada">
+            <label>Escopo do Trabalho</label><textarea id="f-escopo" rows="6"></textarea>
+            <label>Diferencial e Garantia</label><textarea id="f-garantia" rows="3"></textarea>
+            <label>Tempo de Serviço</label><input type="text" id="f-tempo" placeholder="Ex: 2 dias úteis">
+            <label>Valor da Mão de Obra (R$)</label><input type="number" id="f-mao-obra">
+            <label>Valor Total da Empreitada (Materiais + Mão de Obra) (R$)</label><input type="number" id="f-empreitada">
         </div>
 
         <div id="fields-lista" style="display:none;">
@@ -147,8 +193,8 @@
             <button class="btn btn-outline" onclick="addMaterialRow()">+ Adicionar Item</button>
         </div>
 
-        <button class="btn" onclick="saveData()">💾 Salvar Alterações</button>
-        <button class="btn btn-accent" id="btn-pdf" style="display:none;" onclick="exportPDF()">📄 Gerar PDF</button>
+        <button class="btn" onclick="saveData()">💾 Salvar no iPhone</button>
+        <button class="btn btn-accent" id="btn-pdf" style="display:none;" onclick="exportPDF()">📄 Gerar PDF Profissional</button>
         <button class="btn btn-outline" onclick="showScreen('screen-home')">Voltar</button>
     </div>
 </div>
@@ -156,133 +202,247 @@
 <div id="print-area">
     <div id="pdf-template" class="pdf-content">
         <div class="pdf-header">
-            <img src="logo.png" alt="Logo" onerror="this.style.display='none'">
-            <h1 style="color:#004a8d; margin:0; font-size: 18pt;">HS MANUTENÇÃO ELÉTRICA</h1>
-            <p style="margin:2px 0; font-size: 10pt; font-weight: bold;">PROPOSTA DE SERVIÇO DE MANUTENÇÃO E INSTALAÇÃO</p>
+            <img src="logo.png" alt="Logomarca HS" onerror="this.style.display='none'">
+            <h1>HS MANUTENÇÃO ELÉTRICA</h1>
+            <p id="pdf-tipo-txt">PROPOSTA DE SERVIÇO DE MANUTENÇÃO E INSTALAÇÃO ELÉTRICA ESPECIALIZADA</p>
+        </div>
+        <div class="pdf-info">
+            <div><strong>Cliente:</strong> <span id="p-cliente"></span></div>
+            <div><strong>Data:</strong> <span id="p-data"></span></div>
+            <div><strong>Endereço:</strong> <span id="p-endereco"></span></div>
+            <div><strong>OS Nº:</strong> <span id="p-os-num"></span></div>
         </div>
         <div id="p-corpo"></div>
-        <div style="margin-top: 20px; text-align: center; font-size: 10pt;">
-            <p>Atenciosamente, <strong>Higor Servelo</strong></p>
+        <div class="pdf-footer">
+            Atenciosamente,<br><strong>Higor Servelo</strong>
         </div>
     </div>
 </div>
 
 <script>
-    let db = JSON.parse(localStorage.getItem('hs_database')) || { lastOS: 1000, entries: [], gastos: [] };
-    let chartL = null, currentId = null;
+    let db = JSON.parse(localStorage.getItem('hs_database')) || { lastOS: 1000, entries: [] };
+    let currentId = null;
+
+    const STATUS_MAP = {
+        'aguardando': { text: 'Aguardando Aprovação de Orçamento', cls: 'st-aguardando' },
+        'aprovado': { text: 'Orçamento Aprovado', cls: 'st-aprovado' },
+        'reprovado': { text: 'Orçamento Reprovado', cls: 'st-reprovado' },
+        'iniciada': { text: 'Ordem de Serviço Iniciada', cls: 'st-iniciada' },
+        'concluida': { text: 'Ordem de Serviço Concluída', cls: 'st-concluida' },
+        'cancelada': { text: 'Ordem de Serviço Cancelada', cls: 'st-cancelada' }
+    };
+
+    function injectInitialData() {
+        if(db.entries.length === 0) {
+            db.entries.push({
+                id: 1, osNum: 1001, cliente: "Quintal dos Amigos Lounge & Bar", endereco: "Rua Euclides Pacheco 233 - Tatuapé, São Paulo- SP",
+                dataRaw: "2026-04-09", data: "09/04/2026", tipo: "lista", status: "aguardando", authType: "", escopo: "", garantia: "", tempo: "", maoObra: "", empreitada: "",
+                materiais: [
+                    {d: "Fonte Chaveada Slim 12V 20A (Letreiros/Espelho)", q: "2", v: "125.00"},
+                    {d: "Fonte Chaveada 12V 5A (Parede Viva)", q: "2", v: "45.00"},
+                    {d: "Spot LED Embutir 7W Direcionável (Corredor/Banheiro)", q: "4", v: "28.00"},
+                    {d: "Lâmpada LED Tubular T8 18W (Cozinha/Serviço)", q: "6", v: "22.00"},
+                    {d: "Plafon LED Sobrepor Quadrado 24W (Cozinha/Serviço)", q: "6", v: "48.00"},
+                    {d: "Arandela Interna Parede (Debaixo da Escada)", q: "2", v: "65.00"},
+                    {d: "Lâmpada LED Bulbo E27 9W (Para Arandela)", q: "2", v: "12.00"},
+                    {d: "Fita de Cobre Adesiva Condutora (Vitrine)", q: "1", v: "185.00"},
+                    {d: "Cabo Flexível 1,5mm² (Rolo 50m)", q: "1", v: "115.00"},
+                    {d: "Lâmpada LED Dicróica MR16 (Substituição Banheiro)", q: "2", v: "18.50"},
+                    {d: "Barramento LED Linear de Sobrepor (Teto)", q: "1", v: "134.90"},
+                    {d: "Materiais de Fixação (Buchas, Parafusos, Wago)", q: "1", v: "120.00"}
+                ]
+            });
+            db.entries.push({
+                id: 2, osNum: 1002, cliente: "Quintal Rooftop", endereco: "Rua Euclides Pacheco 233 - Tatuapé, São Paulo- SP",
+                dataRaw: "2026-04-09", data: "09/04/2026", tipo: "orcamento", status: "aguardando", authType: "",
+                escopo: "Troca de 2 lâmpadas led no banheiro feminino;\nSubstituição de duas fontes de led letreiro e espelho no forro de drywall;\nInstalação de 2 spots led no corredor;\nTroca de 2 fontes de led letreiro na parede viva;\nInstalar dois pontos de arandela na parede debaixo da escada com lâmpada convencional;\nInstalação de dois spots led embutir no banheiro masculino;\nSubstituir barramento led de sobrepor no teto;\nReparo em 4 fritadeiras;\nSolucionar lâmpada que fica ligada por retorno de fase;\nSistema de fita de cobre condutora na vitrine de bebidas;\nTroca de 6 lâmpadas sobrepor e embutir na cozinha e área de serviços.",
+                garantia: "Garantia de 90 dias para os serviços executados conforme CDC.\nMão de obra técnica especializada em manutenção e infraestrutura.",
+                tempo: "Dois dias inteiros de serviço", maoObra: "1300", empreitada: "2950", materiais: []
+            });
+            db.lastOS = 1002; localStorage.setItem('hs_database', JSON.stringify(db));
+        }
+    }
+    injectInitialData();
 
     function showScreen(id) {
         document.querySelectorAll('.screen').forEach(s => s.classList.remove('active'));
         document.querySelectorAll('.nav-btn').forEach(b => b.classList.remove('active-nav'));
         document.getElementById(id).classList.add('active');
-        const navId = 'nav-' + id.replace('screen-', '');
-        if(document.getElementById(navId)) document.getElementById(navId).classList.add('active-nav');
-        if(id === 'screen-home') renderHome();
-        if(id === 'screen-financeiro') renderFinanceiro();
-        if(id === 'screen-os-list') renderAllOS();
-        if(id === 'screen-orcamentos') renderOrcamentos();
-        if(id === 'screen-clientes') renderClientes();
+        if(id === 'screen-home') { document.getElementById('nav-home').classList.add('active-nav'); renderHome(); }
+        else if(id === 'screen-clientes') { document.getElementById('nav-clientes').classList.add('active-nav'); renderClientes(); }
+        else if(id === 'screen-os-list') { document.getElementById('nav-os').classList.add('active-nav'); renderAllOS(); }
+        else if(id === 'screen-orcamentos') { document.getElementById('nav-orcamentos').classList.add('active-nav'); renderOrcamentos(); }
     }
 
-    function renderHome() {
+    function getListItemHTML(e) {
+        const st = STATUS_MAP[e.status || 'aguardando'];
+        const trashIcon = `<svg viewBox="0 0 24 24" width="22" height="22" stroke="currentColor" stroke-width="2" fill="none" stroke-linecap="round" stroke-linejoin="round"><polyline points="3 6 5 6 21 6"></polyline><path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"></path><line x1="10" y1="11" x2="10" y2="17"></line><line x1="14" y1="11" x2="14" y2="17"></line></svg>`;
+        
+        return `<div class="list-item" onclick="editEntry(${e.id})">
+            <div style="flex-grow: 1;">
+                <strong>${e.cliente}</strong><br>
+                <small>${e.tipo.toUpperCase()} - ${e.data}</small><br>
+                <span class="badge-status ${st.cls}" style="font-size:10px;">${st.text}</span>
+            </div>
+            <div style="display: flex; flex-direction: column; align-items: flex-end; gap: 8px;">
+                <span class="os-badge">OS ${e.osNum}</span>
+                <button class="del-btn" onclick="event.stopPropagation(); deleteEntryById(${e.id})" title="Excluir">${trashIcon}</button>
+            </div>
+        </div>`;
+    }
+
+    function renderHome(filter = '') {
         const c = document.getElementById('home-list-container');
-        c.innerHTML = db.entries.slice().reverse().slice(0, 5).map(e => `
-            <div class="list-item" onclick="editEntry(${e.id})">
-                <div><strong>${e.cliente}</strong><br><small>OS ${e.osNum}</small></div>
-                <span class="os-badge">${e.fPago === 'sim' ? 'PAGO' : 'ABERTO'}</span>
+        let f = filter ? db.entries.filter(e => e.cliente.toLowerCase().includes(filter.toLowerCase()) || e.osNum.toString().includes(filter)) : db.entries;
+        c.innerHTML = f.slice().reverse().slice(0, 10).map(getListItemHTML).join('');
+    }
+
+    function filterHome() { renderHome(document.getElementById('main-search').value); }
+    function renderAllOS() { document.getElementById('list-todas-os-container').innerHTML = db.entries.slice().reverse().map(getListItemHTML).join(''); }
+    function renderOrcamentos() { document.getElementById('list-orcamentos-container').innerHTML = db.entries.filter(e => e.tipo === 'orcamento').reverse().map(getListItemHTML).join(''); }
+    
+    function renderClientes() {
+        const cliUnicos = [...new Set(db.entries.map(e => e.cliente))];
+        document.getElementById('list-clientes-container').innerHTML = cliUnicos.map(cli => `
+            <div class="list-item" onclick="openClienteDetalhes('${cli}')">
+                <strong style="font-size: 18px;">${cli}</strong><span style="color: var(--primary);">Ver Histórico ➔</span>
             </div>`).join('');
     }
 
-    function toggleFormFields() {
-        const t = document.getElementById('f-tipo').value;
-        document.getElementById('fields-orcamento').style.display = t === 'orcamento' ? 'block' : 'none';
-        document.getElementById('fields-lista').style.display = t === 'lista' ? 'block' : 'none';
+    function openClienteDetalhes(nome) {
+        document.getElementById('detalhe-nome-cliente').innerText = nome;
+        const e = db.entries.find(en => en.cliente === nome);
+        document.getElementById('detalhe-end-cliente').innerText = e ? e.endereco : '';
+        document.getElementById('list-cliente-os').innerHTML = db.entries.filter(en => en.cliente === nome).reverse().map(getListItemHTML).join('');
+        document.querySelectorAll('.screen').forEach(s => s.classList.remove('active'));
+        document.getElementById('screen-cliente-detalhes').classList.add('active');
     }
 
-    function addMaterialRow(d='', q='', v='') {
+    function deleteEntryById(id) {
+        const e = db.entries.find(en => en.id === id);
+        if(confirm(`Tem certeza que deseja excluir ${e.tipo === 'orcamento' ? 'o orçamento' : 'a lista'} da OS ${e.osNum} do cliente "${e.cliente}"?`)) {
+            db.entries = db.entries.filter(en => en.id !== id);
+            localStorage.setItem('hs_database', JSON.stringify(db));
+            if(document.getElementById('screen-home').classList.contains('active')) renderHome();
+            if(document.getElementById('screen-os-list').classList.contains('active')) renderAllOS();
+            if(document.getElementById('screen-orcamentos').classList.contains('active')) renderOrcamentos();
+            if(document.getElementById('screen-cliente-detalhes').classList.contains('active')) openClienteDetalhes(e.cliente);
+        }
+    }
+
+    function setStatus(newStatus) {
+        document.getElementById('f-status').value = newStatus;
+        const st = STATUS_MAP[newStatus];
+        const display = document.getElementById('display-status');
+        display.className = `badge-status ${st.cls}`;
+        display.innerText = st.text;
+    }
+
+    function openNewOS() {
+        currentId = null;
+        document.getElementById('os-number-display').innerText = db.lastOS + 1;
+        document.getElementById('btn-pdf').style.display = 'none';
+        
+        setStatus('aguardando');
+        document.getElementById('auth-mao').checked = false;
+        document.getElementById('auth-emp').checked = false;
+
+        document.getElementById('f-cliente').value = ''; document.getElementById('f-endereco').value = '';
+        document.getElementById('f-data-os').valueAsDate = new Date();
+        document.getElementById('f-escopo').value = ''; document.getElementById('f-garantia').value = '';
+        document.getElementById('f-tempo').value = ''; document.getElementById('f-mao-obra').value = ''; document.getElementById('f-empreitada').value = '';
+        document.getElementById('mat-container').innerHTML = ''; addMaterialRow();
+        document.querySelectorAll('.screen').forEach(s => s.classList.remove('active'));
+        document.getElementById('screen-os-form').classList.add('active');
+    }
+
+    function toggleFormFields() {
+        const tipo = document.getElementById('f-tipo').value;
+        document.getElementById('fields-orcamento').style.display = tipo === 'orcamento' ? 'block' : 'none';
+        document.getElementById('fields-lista').style.display = tipo === 'lista' ? 'block' : 'none';
+    }
+
+    function addMaterialRow() {
         const div = document.createElement('div'); div.className = 'mat-grid';
-        div.innerHTML = `<input type="text" placeholder="Item" class="m-d" value="${d}"><input type="number" placeholder="Qtd" class="m-q" value="${q}"><input type="number" placeholder="V.U" class="m-v" value="${v}">`;
+        div.innerHTML = `<input type="text" placeholder="Material" class="m-d"><input type="number" placeholder="Qtd" class="m-q"><input type="number" placeholder="V.U" class="m-v">`;
         document.getElementById('mat-container').appendChild(div);
     }
 
     function saveData() {
+        let authSelected = "";
+        if(document.getElementById('auth-mao').checked) authSelected = "Mão de Obra";
+        if(document.getElementById('auth-emp').checked) authSelected = "Empreitada";
+
         const entry = {
-            id: currentId || Date.now(),
-            osNum: currentId ? parseInt(document.getElementById('os-number-display').innerText) : ++db.lastOS,
+            id: currentId || Date.now(), osNum: currentId ? parseInt(document.getElementById('os-number-display').innerText) : ++db.lastOS,
             cliente: document.getElementById('f-cliente').value, endereco: document.getElementById('f-endereco').value,
-            data: document.getElementById('f-data-os').value, tipo: document.getElementById('f-tipo').value,
-            maoObra: document.getElementById('f-mao-obra').value, empreitada: document.getElementById('f-empreitada').value,
-            escopo: document.getElementById('f-escopo').value, fPago: document.getElementById('f-pago').value,
-            materiais: Array.from(document.querySelectorAll('.mat-grid')).map(row => ({ d: row.querySelector('.m-d').value, q: row.querySelector('.m-q').value, v: row.querySelector('.m-v').value })).filter(m => m.d)
+            dataRaw: document.getElementById('f-data-os').value, data: document.getElementById('f-data-os').value.split('-').reverse().join('/'),
+            tipo: document.getElementById('f-tipo').value, 
+            status: document.getElementById('f-status').value, authType: authSelected,
+            escopo: document.getElementById('f-escopo').value, garantia: document.getElementById('f-garantia').value,
+            tempo: document.getElementById('f-tempo').value, maoObra: document.getElementById('f-mao-obra').value, empreitada: document.getElementById('f-empreitada').value,
+            materiais: Array.from(document.querySelectorAll('.mat-grid')).map(row => ({d: row.querySelector('.m-d').value, q: row.querySelector('.m-q').value, v: row.querySelector('.m-v').value})).filter(m => m.d)
         };
         if(currentId) db.entries = db.entries.map(e => e.id === currentId ? entry : e); else db.entries.push(entry);
-        localStorage.setItem('hs_database', JSON.stringify(db));
-        showScreen('screen-home');
+        localStorage.setItem('hs_database', JSON.stringify(db)); alert("Salvo com sucesso!"); showScreen('screen-home');
     }
 
     function editEntry(id) {
         const e = db.entries.find(en => en.id === id); currentId = e.id;
         document.getElementById('os-number-display').innerText = e.osNum;
-        document.getElementById('f-cliente').value = e.cliente;
-        document.getElementById('f-endereco').value = e.endereco || '';
-        document.getElementById('f-data-os').value = e.data || '';
-        document.getElementById('f-mao-obra').value = e.maoObra || '';
-        document.getElementById('f-empreitada').value = e.empreitada || '';
-        document.getElementById('f-escopo').value = e.escopo || '';
-        document.getElementById('f-pago').value = e.fPago || 'nao';
-        document.getElementById('f-tipo').value = e.tipo || 'orcamento';
-        document.getElementById('mat-container').innerHTML = '';
-        if(e.materiais && e.materiais.length) e.materiais.forEach(m => addMaterialRow(m.d, m.q, m.v)); else addMaterialRow();
-        document.getElementById('btn-pdf').style.display = 'block'; toggleFormFields(); showScreen('screen-os-form');
+        
+        setStatus(e.status || 'aguardando');
+        if(e.authType === 'Mão de Obra') document.getElementById('auth-mao').checked = true;
+        else if(e.authType === 'Empreitada') document.getElementById('auth-emp').checked = true;
+        else { document.getElementById('auth-mao').checked = false; document.getElementById('auth-emp').checked = false; }
+
+        document.getElementById('f-cliente').value = e.cliente; document.getElementById('f-endereco').value = e.endereco;
+        document.getElementById('f-data-os').value = e.dataRaw; document.getElementById('f-tipo').value = e.tipo;
+        document.getElementById('f-escopo').value = e.escopo; document.getElementById('f-garantia').value = e.garantia;
+        document.getElementById('f-tempo').value = e.tempo || ''; document.getElementById('f-mao-obra').value = e.maoObra; document.getElementById('f-empreitada').value = e.empreitada;
+        const mc = document.getElementById('mat-container'); mc.innerHTML = '';
+        e.materiais.forEach(m => {
+            const div = document.createElement('div'); div.className = 'mat-grid';
+            div.innerHTML = `<input type="text" value="${m.d}" class="m-d"><input type="number" value="${m.q}" class="m-q"><input type="number" value="${m.v}" class="m-v">`;
+            mc.appendChild(div);
+        });
+        if(e.materiais.length === 0) addMaterialRow();
+        toggleFormFields();
+        document.getElementById('btn-pdf').style.display = 'block';
+        document.querySelectorAll('.screen').forEach(s => s.classList.remove('active')); document.getElementById('screen-os-form').classList.add('active');
     }
 
     function exportPDF() {
         const e = db.entries.find(en => en.id === currentId);
-        let html = `<div style="font-size: 10pt; margin-bottom: 10px;">
-                    <strong>Cliente:</strong> ${e.cliente} <span style="float:right;"><strong>Data:</strong> ${e.data}</span><br>
-                    <strong>Endereço:</strong> ${e.endereco || '---'} <span style="float:right;"><strong>OS Nº:</strong> ${e.osNum}</span>
-                    </div><hr style="border: 0; border-top: 1px solid #ccc;">`;
-        
+        document.getElementById('p-cliente').innerText = e.cliente; document.getElementById('p-data').innerText = e.data;
+        document.getElementById('p-endereco').innerText = e.endereco; document.getElementById('p-os-num').innerText = e.osNum;
+        let html = '';
         if(e.tipo === 'orcamento') {
-            html += `<p><strong>ESCOPO DO TRABALHO:</strong></p><p style="white-space: pre-wrap; font-size: 11pt;">${e.escopo}</p>
-                     <div style="margin-top: 20px; background: #f9f9f9; padding: 10px; border-radius: 5px;">
-                     <strong>INVESTIMENTO:</strong><br>
-                     Valor da mão de obra: <strong>R$ ${parseFloat(e.maoObra || 0).toFixed(2)}</strong><br>
-                     <small>Custo total de empreitada (materiais + mão de obra): R$ ${parseFloat(e.empreitada || 0).toFixed(2)}</small>
-                     </div>`;
+            document.getElementById('pdf-tipo-txt').innerText = "PROPOSTA DE SERVIÇO DE MANUTENÇÃO E INSTALAÇÃO ELÉTRICA ESPECIALIZADA";
+            html = `<div class="pdf-body"><div class="pdf-col-left">
+                    <div class="pdf-section-title">Escopo do Trabalho:</div><ul>${e.escopo.split('\n').filter(l => l.trim() !== '').map(l => `<li>${l}</li>`).join('')}</ul>
+                    <div class="pdf-section-title">Responsável Técnico:</div><ul><li>Nome do Responsável: <strong>Higor Servelo</strong></li></ul>
+                    <div class="pdf-section-title">Tempo de Serviço:</div><ul><li>Previsão de execução: <strong>${e.tempo}</strong></li></ul>
+                </div><div class="pdf-col-right">
+                    <div class="pdf-section-title">Diferencial e Garantia:</div><ul>${e.garantia.split('\n').filter(l => l.trim() !== '').map(l => `<li>${l}</li>`).join('')}</ul>
+                    <div class="pdf-section-title">Investimento:</div><ul style="list-style:none; padding:0;">
+                        <li><strong>Valor da mão de obra: R$ ${parseFloat(e.maoObra || 0).toLocaleString('pt-BR', {minimumFractionDigits: 2})}</strong></li>
+                        <li style="margin-top:10px;">Nota: Valor referente à mão de obra. O custo total de <strong>empreitada</strong> (materiais e mão de obra) é de <strong>R$ ${parseFloat(e.empreitada || 0).toLocaleString('pt-BR', {minimumFractionDigits: 2})}</strong>.</li>
+                        <li style="margin-top:10px;">Pagamento: 50% de sinal e 50% na entrega.</li></ul>
+                </div></div>`;
         } else {
-            html += `<p><strong>LISTA DE MATERIAIS:</strong></p><table class="pdf-table"><tr><th>Item</th><th>Qtd</th><th>Unitário</th></tr>`;
-            e.materiais.forEach(m => { html += `<tr><td>${m.d}</td><td>${m.q}</td><td>R$ ${parseFloat(m.v || 0).toFixed(2)}</td></tr>`; });
-            html += `</table>`;
+            document.getElementById('pdf-tipo-txt').innerText = "LISTA DE MATERIAIS ELÉTRICOS - ATUALIZADA";
+            let rows = '', total = 0;
+            e.materiais.forEach((m, i) => { 
+                let sub = m.q * m.v; total += sub; 
+                rows += `<tr><td style="text-align:center;">${i + 1}</td><td>${m.d}</td><td>${m.q} unid.</td><td>R$ ${parseFloat(m.v).toFixed(2).replace('.',',')}</td><td>R$ ${sub.toFixed(2).replace('.',',')}</td></tr>`; 
+            });
+            html = `<table class="pdf-table"><thead><tr><th style="width:5%; text-align:center;">Nº</th><th>Descrição</th><th>Qtd</th><th>Unit.</th><th>Total</th></tr></thead><tbody>${rows}</tbody><tfoot><tr style="font-weight:bold;"><td colspan="4" style="text-align:right">TOTAL ESTIMADO</td><td>R$ ${total.toFixed(2).replace('.',',')}</td></tr></tfoot></table>`;
         }
         document.getElementById('p-corpo').innerHTML = html;
-        const opt = { margin: 0, filename: `HS_OS_${e.osNum}.pdf`, image: { type: 'jpeg', quality: 0.98 }, html2canvas: { scale: 2, y: 0 }, jsPDF: { unit: 'mm', format: 'a4', orientation: 'portrait' } };
-        html2pdf().set(opt).from(document.getElementById('pdf-template')).save();
+        const opt = { margin: 0, filename: `OS_${e.osNum}.pdf`, image: { type: 'jpeg', quality: 0.98 }, html2canvas: { scale: 3, useCORS: true, letterRendering: true, y: 0, scrollY: 0 }, jsPDF: { unit: 'mm', format: 'a4', orientation: 'portrait' } };
+        html2pdf().from(document.getElementById('pdf-template')).set(opt).save();
     }
-
-    function addGasto() {
-        const v = parseFloat(document.getElementById('f-nota-valor').value);
-        if(!v) return;
-        db.gastos.push({ cat: document.getElementById('f-nota-cat').value, val: v, data: new Date().toLocaleDateString() });
-        localStorage.setItem('hs_database', JSON.stringify(db));
-        document.getElementById('f-nota-valor').value = ''; renderFinanceiro();
-    }
-
-    function renderFinanceiro() {
-        let rec = 0, pen = 0, cust = 0;
-        db.entries.forEach(e => { let v = parseFloat(e.maoObra || 0); if(e.fPago === 'sim') rec += v; else pen += v; });
-        db.gastos.forEach(g => cust += g.val);
-        document.getElementById('fin-total-pago').innerText = `R$ ${rec.toLocaleString('pt-BR')}`;
-        document.getElementById('fin-total-pendente').innerText = `R$ ${pen.toLocaleString('pt-BR')}`;
-        if(chartL) chartL.destroy();
-        chartL = new Chart(document.getElementById('chartLucro'), { type: 'bar', data: { labels: ['Ganhos', 'Custos'], datasets: [{ data: [rec, cust], backgroundColor: ['#28a745', '#d9534f'] }] }, options: { maintainAspectRatio: false } });
-    }
-
-    function openNewOS() { currentId = null; document.getElementById('os-number-display').innerText = db.lastOS + 1; document.getElementById('f-cliente').value = ''; document.getElementById('mat-container').innerHTML = ''; addMaterialRow(); showScreen('screen-os-form'); }
-    function renderAllOS() { document.getElementById('list-todas-os-container').innerHTML = db.entries.slice().reverse().map(e => `<div class="list-item" onclick="editEntry(${e.id})"><div><strong>${e.cliente}</strong><br><small>OS ${e.osNum}</small></div><span>${e.data}</span></div>`).join(''); }
-    function renderOrcamentos() { document.getElementById('list-orcamentos-container').innerHTML = db.entries.filter(e => e.tipo === 'orcamento').reverse().map(e => `<div class="list-item" onclick="editEntry(${e.id})"><div><strong>${e.cliente}</strong><br><small>R$ ${e.maoObra}</small></div><span class="os-badge">OS ${e.osNum}</span></div>`).join(''); }
-    function renderClientes() { const cli = [...new Set(db.entries.map(e => e.cliente))]; document.getElementById('list-clientes-container').innerHTML = cli.map(c => `<div class="list-item"><strong>${c}</strong></div>`).join(''); }
-
     showScreen('screen-home');
 </script>
 </body>
