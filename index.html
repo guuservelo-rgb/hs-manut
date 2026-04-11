@@ -38,26 +38,23 @@
         .list-item { background: #fff; border-left: 5px solid var(--primary); padding: 15px; margin: 10px 0; border-radius: 8px; cursor: pointer; display: flex; justify-content: space-between; align-items: center; box-shadow: 0 2px 8px rgba(0,0,0,0.06); }
         .os-badge { background: #eee; padding: 4px 8px; border-radius: 4px; font-size: 12px; font-weight: bold; }
         
-        .badge-status { padding: 4px 8px; border-radius: 4px; font-size: 12px; font-weight: bold; color: white; display: inline-block; margin-top: 5px; }
-        .st-aguardando { background: #ff9800; }
-        .st-concluida { background: #2196f3; }
-        .st-pago { background: var(--success); }
+        .mat-grid { display: grid; grid-template-columns: 2fr 1fr 1fr; gap: 8px; margin-bottom: 10px; }
 
+        /* FINANCEIRO */
         .fin-summary { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; margin-bottom: 20px; }
         .fin-card { padding: 15px; border-radius: 10px; text-align: center; color: white; }
         .bg-ganho { background: var(--success); }
         .bg-pendente { background: var(--accent); }
-        .chart-container { position: relative; margin: auto; height: 250px; width: 100%; }
+        .chart-container { height: 200px; margin-bottom: 20px; }
 
-        .mat-grid { display: grid; grid-template-columns: 2fr 1fr 1fr; gap: 8px; margin-bottom: 10px; position: relative; padding-left: 20px; }
-        .mat-grid::before { content: "•"; position: absolute; left: 0; top: 12px; font-weight: bold; color: var(--primary); }
-
+        /* PDF - FIX: REMOVIDO ESPAÇAMENTO EXCESSIVO */
         #print-area { position: absolute; left: -9999px; top: 0; }
-        .pdf-content { width: 210mm; height: 297mm; padding: 10mm 15mm; background: white; color: black; font-family: Arial, sans-serif; box-sizing: border-box; display: flex; flex-direction: column; }
-        .pdf-header { text-align: center; border-bottom: 2px solid #000; margin-bottom: 10px; padding-bottom: 10px; }
-        .pdf-header img { max-height: 60px; }
-        .pdf-table { width: 100%; border-collapse: collapse; margin-top: 15px; font-size: 10pt; }
-        .pdf-table th, .pdf-table td { border: 1px solid #ccc; padding: 8px; text-align: left; }
+        .pdf-content { width: 190mm; margin: 0; padding: 10mm; background: white; color: black; font-family: Arial, sans-serif; }
+        .pdf-header { text-align: center; border-bottom: 2px solid #004a8d; margin-bottom: 15px; padding-bottom: 10px; }
+        .pdf-header img { max-height: 70px; display: block; margin: 0 auto 5px; }
+        .pdf-table { width: 100%; border-collapse: collapse; margin-top: 10px; }
+        .pdf-table th { background: #f2f2f2; border: 1px solid #ccc; padding: 8px; text-align: left; font-size: 12px; }
+        .pdf-table td { border: 1px solid #ccc; padding: 8px; font-size: 12px; }
     </style>
 </head>
 <body>
@@ -77,10 +74,6 @@
     </div>
 
     <div id="screen-home" class="screen active">
-        <div class="card" style="display:flex; gap:10px;">
-            <input type="text" id="main-search" placeholder="Pesquisar cliente ou OS...">
-            <button class="btn" style="width:auto;" onclick="filterHome()">🔍</button>
-        </div>
         <button class="btn" onclick="openNewOS()">+ Criar Nova Ordem de Serviço</button>
         <h3>Recentes</h3>
         <div id="home-list-container"></div>
@@ -88,34 +81,23 @@
 
     <div id="screen-financeiro" class="screen">
         <div class="fin-summary">
-            <div class="fin-card bg-ganho">
-                <small>Recebido</small><br><strong id="fin-total-pago">R$ 0,00</strong>
-            </div>
-            <div class="fin-card bg-pendente">
-                <small>A Receber</small><br><strong id="fin-total-pendente">R$ 0,00</strong>
-            </div>
+            <div class="fin-card bg-ganho"><small>Recebido</small><br><strong id="fin-total-pago">R$ 0,00</strong></div>
+            <div class="fin-card bg-pendente"><small>Pendente</small><br><strong id="fin-total-pendente">R$ 0,00</strong></div>
         </div>
         <div class="card">
-            <h3>Balanço de Ganhos vs Custos</h3>
+            <h3>Balanço</h3>
             <div class="chart-container"><canvas id="chartLucro"></canvas></div>
         </div>
         <div class="card">
-            <h3>Distribuição de Gastos</h3>
-            <div class="chart-container"><canvas id="chartCategorias"></canvas></div>
-        </div>
-        <div class="card">
-            <h3>Registrar Custo (Foto)</h3>
+            <h3>Registrar Gasto</h3>
             <input type="file" accept="image/*" capture="camera" id="f-nota-foto">
-            <label>Categoria</label>
             <select id="f-nota-cat">
                 <option value="Combustível">⛽ Combustível</option>
                 <option value="Refeição">🍽️ Refeição</option>
                 <option value="Material">🛠️ Material</option>
-                <option value="Outros">📦 Outros</option>
             </select>
-            <label>Valor (R$)</label>
-            <input type="number" id="f-nota-valor">
-            <button class="btn btn-danger" onclick="addGasto()">Registrar Custo</button>
+            <input type="number" id="f-nota-valor" placeholder="Valor R$">
+            <button class="btn btn-danger" onclick="addGasto()">Salvar Custo</button>
         </div>
     </div>
 
@@ -125,46 +107,39 @@
     </div>
 
     <div id="screen-os-list" class="screen card">
-        <h2>Todas as Ordens de Serviço</h2>
+        <h2>Todas as OS</h2>
         <div id="list-todas-os-container"></div>
     </div>
 
     <div id="screen-orcamentos" class="screen card">
-        <h2>Todos os Orçamentos</h2>
+        <h2>Orçamentos Salvos</h2>
         <div id="list-orcamentos-container"></div>
     </div>
 
     <div id="screen-os-form" class="screen card">
-        <h2 id="form-title">Ordem de Serviço</h2>
+        <h2 id="form-title">Editar Documento</h2>
         <div style="text-align: right;"><span class="os-badge">OS Nº: <span id="os-number-display">0000</span></span></div>
         
-        <div class="status-panel" style="background:#f9f9f9; padding:15px; border-radius:8px; margin-bottom:15px; border: 1px solid #ddd;">
-            <label>Pagamento:</label>
-            <select id="f-pago">
-                <option value="nao">❌ Pendente</option>
-                <option value="sim">✅ Pago</option>
-            </select>
-            <label>Execução:</label>
-            <select id="f-status">
-                <option value="aguardando">Aguardando Aprovação</option>
-                <option value="concluida">Serviço Concluído</option>
-            </select>
-        </div>
-        
+        <label>Status Financeiro</label>
+        <select id="f-pago">
+            <option value="nao">Pendente</option>
+            <option value="sim">Pago</option>
+        </select>
+
         <label>Cliente</label><input type="text" id="f-cliente">
         <label>Endereço</label><input type="text" id="f-endereco">
         <label>Data</label><input type="date" id="f-data-os">
         
-        <label>Tipo de Documento</label>
+        <label>Tipo</label>
         <select id="f-tipo" onchange="toggleFormFields()">
             <option value="orcamento">Proposta de Orçamento</option>
             <option value="lista">Lista de Materiais</option>
         </select>
 
         <div id="fields-orcamento">
-            <label>Escopo do Trabalho</label><textarea id="f-escopo" rows="6"></textarea>
+            <label>Escopo</label><textarea id="f-escopo" rows="8"></textarea>
             <label>Mão de Obra (R$)</label><input type="number" id="f-mao-obra">
-            <label>Total Empreitada (R$)</label><input type="number" id="f-empreitada">
+            <label>Empreitada Total (R$)</label><input type="number" id="f-empreitada">
         </div>
 
         <div id="fields-lista" style="display:none;">
@@ -172,7 +147,7 @@
             <button class="btn btn-outline" onclick="addMaterialRow()">+ Adicionar Item</button>
         </div>
 
-        <button class="btn" onclick="saveData()">💾 Salvar</button>
+        <button class="btn" onclick="saveData()">💾 Salvar Alterações</button>
         <button class="btn btn-accent" id="btn-pdf" style="display:none;" onclick="exportPDF()">📄 Gerar PDF</button>
         <button class="btn btn-outline" onclick="showScreen('screen-home')">Voltar</button>
     </div>
@@ -182,15 +157,19 @@
     <div id="pdf-template" class="pdf-content">
         <div class="pdf-header">
             <img src="logo.png" alt="Logo" onerror="this.style.display='none'">
-            <h1 style="color:#004a8d;">HS MANUTENÇÃO ELÉTRICA</h1>
+            <h1 style="color:#004a8d; margin:0; font-size: 18pt;">HS MANUTENÇÃO ELÉTRICA</h1>
+            <p style="margin:2px 0; font-size: 10pt; font-weight: bold;">PROPOSTA DE SERVIÇO DE MANUTENÇÃO E INSTALAÇÃO</p>
         </div>
         <div id="p-corpo"></div>
+        <div style="margin-top: 20px; text-align: center; font-size: 10pt;">
+            <p>Atenciosamente, <strong>Higor Servelo</strong></p>
+        </div>
     </div>
 </div>
 
 <script>
     let db = JSON.parse(localStorage.getItem('hs_database')) || { lastOS: 1000, entries: [], gastos: [] };
-    let chartL = null, chartC = null, currentId = null;
+    let chartL = null, currentId = null;
 
     function showScreen(id) {
         document.querySelectorAll('.screen').forEach(s => s.classList.remove('active'));
@@ -198,7 +177,6 @@
         document.getElementById(id).classList.add('active');
         const navId = 'nav-' + id.replace('screen-', '');
         if(document.getElementById(navId)) document.getElementById(navId).classList.add('active-nav');
-        
         if(id === 'screen-home') renderHome();
         if(id === 'screen-financeiro') renderFinanceiro();
         if(id === 'screen-os-list') renderAllOS();
@@ -206,81 +184,25 @@
         if(id === 'screen-clientes') renderClientes();
     }
 
-    function addGasto() {
-        const val = parseFloat(document.getElementById('f-nota-valor').value);
-        const cat = document.getElementById('f-nota-cat').value;
-        if(!val) return alert("Insira o valor.");
-        db.gastos.push({ cat, val, data: new Date().toLocaleDateString() });
-        localStorage.setItem('hs_database', JSON.stringify(db));
-        document.getElementById('f-nota-valor').value = '';
-        renderFinanceiro();
-    }
-
-    function renderFinanceiro() {
-        let rec = 0, pen = 0, cust = 0;
-        let cats = { "Combustível": 0, "Refeição": 0, "Material": 0, "Outros": 0 };
-        db.entries.forEach(e => {
-            let v = parseFloat(e.maoObra || 0);
-            if(e.fPago === 'sim') rec += v; else pen += v;
-        });
-        db.gastos.forEach(g => { cust += g.val; if(cats[g.cat] !== undefined) cats[g.cat] += g.val; });
-        document.getElementById('fin-total-pago').innerText = `R$ ${rec.toLocaleString('pt-BR')}`;
-        document.getElementById('fin-total-pendente').innerText = `R$ ${pen.toLocaleString('pt-BR')}`;
-
-        if(chartL) chartL.destroy();
-        if(chartC) chartC.destroy();
-        chartL = new Chart(document.getElementById('chartLucro'), {
-            type: 'bar', data: { labels: ['Ganhos', 'Custos'], datasets: [{ data: [rec, cust], backgroundColor: ['#28a745', '#d9534f'] }] },
-            options: { maintainAspectRatio: false, plugins: { legend: { display: false } } }
-        });
-        chartC = new Chart(document.getElementById('chartCategorias'), {
-            type: 'doughnut', data: { labels: Object.keys(cats), datasets: [{ data: Object.values(cats), backgroundColor: ['#ff9800', '#2196f3', '#8bc34a', '#9e9e9e'] }] },
-            options: { maintainAspectRatio: false }
-        });
-    }
-
     function renderHome() {
         const c = document.getElementById('home-list-container');
         c.innerHTML = db.entries.slice().reverse().slice(0, 5).map(e => `
             <div class="list-item" onclick="editEntry(${e.id})">
                 <div><strong>${e.cliente}</strong><br><small>OS ${e.osNum}</small></div>
-                <span class="badge-status ${e.fPago === 'sim' ? 'st-pago' : 'st-aguardando'}">${e.fPago === 'sim' ? 'PAGO' : 'PENDENTE'}</span>
+                <span class="os-badge">${e.fPago === 'sim' ? 'PAGO' : 'ABERTO'}</span>
             </div>`).join('');
     }
 
-    function renderAllOS() {
-        document.getElementById('list-todas-os-container').innerHTML = db.entries.slice().reverse().map(e => `
-            <div class="list-item" onclick="editEntry(${e.id})"><div><strong>${e.cliente}</strong><br><small>OS ${e.osNum}</small></div><span>${e.data}</span></div>`).join('');
-    }
-
-    function renderOrcamentos() {
-        document.getElementById('list-orcamentos-container').innerHTML = db.entries.filter(e => e.tipo === 'orcamento').reverse().map(e => `
-            <div class="list-item" onclick="editEntry(${e.id})"><div><strong>${e.cliente}</strong><br><small>R$ ${e.maoObra}</small></div><span class="os-badge">OS ${e.osNum}</span></div>`).join('');
-    }
-
-    function renderClientes() {
-        const cli = [...new Set(db.entries.map(e => e.cliente))];
-        document.getElementById('list-clientes-container').innerHTML = cli.map(c => `<div class="list-item"><strong>${c}</strong></div>`).join('');
-    }
-
     function toggleFormFields() {
-        const tipo = document.getElementById('f-tipo').value;
-        document.getElementById('fields-orcamento').style.display = tipo === 'orcamento' ? 'block' : 'none';
-        document.getElementById('fields-lista').style.display = tipo === 'lista' ? 'block' : 'none';
+        const t = document.getElementById('f-tipo').value;
+        document.getElementById('fields-orcamento').style.display = t === 'orcamento' ? 'block' : 'none';
+        document.getElementById('fields-lista').style.display = t === 'lista' ? 'block' : 'none';
     }
 
-    function addMaterialRow() {
+    function addMaterialRow(d='', q='', v='') {
         const div = document.createElement('div'); div.className = 'mat-grid';
-        div.innerHTML = `<input type="text" placeholder="Item" class="m-d"><input type="number" placeholder="Qtd" class="m-q"><input type="number" placeholder="V.U" class="m-v">`;
+        div.innerHTML = `<input type="text" placeholder="Item" class="m-d" value="${d}"><input type="number" placeholder="Qtd" class="m-q" value="${q}"><input type="number" placeholder="V.U" class="m-v" value="${v}">`;
         document.getElementById('mat-container').appendChild(div);
-    }
-
-    function openNewOS() {
-        currentId = null;
-        document.getElementById('os-number-display').innerText = db.lastOS + 1;
-        document.getElementById('f-cliente').value = ''; document.getElementById('f-mao-obra').value = '';
-        document.getElementById('mat-container').innerHTML = ''; addMaterialRow();
-        showScreen('screen-os-form');
     }
 
     function saveData() {
@@ -291,7 +213,6 @@
             data: document.getElementById('f-data-os').value, tipo: document.getElementById('f-tipo').value,
             maoObra: document.getElementById('f-mao-obra').value, empreitada: document.getElementById('f-empreitada').value,
             escopo: document.getElementById('f-escopo').value, fPago: document.getElementById('f-pago').value,
-            status: document.getElementById('f-status').value,
             materiais: Array.from(document.querySelectorAll('.mat-grid')).map(row => ({ d: row.querySelector('.m-d').value, q: row.querySelector('.m-q').value, v: row.querySelector('.m-v').value })).filter(m => m.d)
         };
         if(currentId) db.entries = db.entries.map(e => e.id === currentId ? entry : e); else db.entries.push(entry);
@@ -302,19 +223,65 @@
     function editEntry(id) {
         const e = db.entries.find(en => en.id === id); currentId = e.id;
         document.getElementById('os-number-display').innerText = e.osNum;
-        document.getElementById('f-cliente').value = e.cliente; document.getElementById('f-mao-obra').value = e.maoObra;
-        document.getElementById('f-pago').value = e.fPago || 'nao'; document.getElementById('f-tipo').value = e.tipo;
+        document.getElementById('f-cliente').value = e.cliente;
+        document.getElementById('f-endereco').value = e.endereco || '';
+        document.getElementById('f-data-os').value = e.data || '';
+        document.getElementById('f-mao-obra').value = e.maoObra || '';
+        document.getElementById('f-empreitada').value = e.empreitada || '';
+        document.getElementById('f-escopo').value = e.escopo || '';
+        document.getElementById('f-pago').value = e.fPago || 'nao';
+        document.getElementById('f-tipo').value = e.tipo || 'orcamento';
+        document.getElementById('mat-container').innerHTML = '';
+        if(e.materiais && e.materiais.length) e.materiais.forEach(m => addMaterialRow(m.d, m.q, m.v)); else addMaterialRow();
         document.getElementById('btn-pdf').style.display = 'block'; toggleFormFields(); showScreen('screen-os-form');
     }
 
     function exportPDF() {
         const e = db.entries.find(en => en.id === currentId);
-        let html = `<h3>Cliente: ${e.cliente} | OS: ${e.osNum}</h3><p>Data: ${e.data}</p>`;
-        if(e.tipo === 'orcamento') { html += `<h4>Escopo:</h4><p>${e.escopo}</p><h4>Valor Mão de Obra: R$ ${e.maoObra}</h4>`; }
-        else { html += `<table class="pdf-table"><tr><th>Item</th><th>Qtd</th><th>Valor</th></tr>`; e.materiais.forEach(m => { html += `<tr><td>${m.d}</td><td>${m.q}</td><td>${m.v}</td></tr>`; }); html += `</table>`; }
+        let html = `<div style="font-size: 10pt; margin-bottom: 10px;">
+                    <strong>Cliente:</strong> ${e.cliente} <span style="float:right;"><strong>Data:</strong> ${e.data}</span><br>
+                    <strong>Endereço:</strong> ${e.endereco || '---'} <span style="float:right;"><strong>OS Nº:</strong> ${e.osNum}</span>
+                    </div><hr style="border: 0; border-top: 1px solid #ccc;">`;
+        
+        if(e.tipo === 'orcamento') {
+            html += `<p><strong>ESCOPO DO TRABALHO:</strong></p><p style="white-space: pre-wrap; font-size: 11pt;">${e.escopo}</p>
+                     <div style="margin-top: 20px; background: #f9f9f9; padding: 10px; border-radius: 5px;">
+                     <strong>INVESTIMENTO:</strong><br>
+                     Valor da mão de obra: <strong>R$ ${parseFloat(e.maoObra || 0).toFixed(2)}</strong><br>
+                     <small>Custo total de empreitada (materiais + mão de obra): R$ ${parseFloat(e.empreitada || 0).toFixed(2)}</small>
+                     </div>`;
+        } else {
+            html += `<p><strong>LISTA DE MATERIAIS:</strong></p><table class="pdf-table"><tr><th>Item</th><th>Qtd</th><th>Unitário</th></tr>`;
+            e.materiais.forEach(m => { html += `<tr><td>${m.d}</td><td>${m.q}</td><td>R$ ${parseFloat(m.v || 0).toFixed(2)}</td></tr>`; });
+            html += `</table>`;
+        }
         document.getElementById('p-corpo').innerHTML = html;
-        html2pdf().from(document.getElementById('pdf-template')).save(`OS_${e.osNum}.pdf`);
+        const opt = { margin: 0, filename: `HS_OS_${e.osNum}.pdf`, image: { type: 'jpeg', quality: 0.98 }, html2canvas: { scale: 2, y: 0 }, jsPDF: { unit: 'mm', format: 'a4', orientation: 'portrait' } };
+        html2pdf().set(opt).from(document.getElementById('pdf-template')).save();
     }
+
+    function addGasto() {
+        const v = parseFloat(document.getElementById('f-nota-valor').value);
+        if(!v) return;
+        db.gastos.push({ cat: document.getElementById('f-nota-cat').value, val: v, data: new Date().toLocaleDateString() });
+        localStorage.setItem('hs_database', JSON.stringify(db));
+        document.getElementById('f-nota-valor').value = ''; renderFinanceiro();
+    }
+
+    function renderFinanceiro() {
+        let rec = 0, pen = 0, cust = 0;
+        db.entries.forEach(e => { let v = parseFloat(e.maoObra || 0); if(e.fPago === 'sim') rec += v; else pen += v; });
+        db.gastos.forEach(g => cust += g.val);
+        document.getElementById('fin-total-pago').innerText = `R$ ${rec.toLocaleString('pt-BR')}`;
+        document.getElementById('fin-total-pendente').innerText = `R$ ${pen.toLocaleString('pt-BR')}`;
+        if(chartL) chartL.destroy();
+        chartL = new Chart(document.getElementById('chartLucro'), { type: 'bar', data: { labels: ['Ganhos', 'Custos'], datasets: [{ data: [rec, cust], backgroundColor: ['#28a745', '#d9534f'] }] }, options: { maintainAspectRatio: false } });
+    }
+
+    function openNewOS() { currentId = null; document.getElementById('os-number-display').innerText = db.lastOS + 1; document.getElementById('f-cliente').value = ''; document.getElementById('mat-container').innerHTML = ''; addMaterialRow(); showScreen('screen-os-form'); }
+    function renderAllOS() { document.getElementById('list-todas-os-container').innerHTML = db.entries.slice().reverse().map(e => `<div class="list-item" onclick="editEntry(${e.id})"><div><strong>${e.cliente}</strong><br><small>OS ${e.osNum}</small></div><span>${e.data}</span></div>`).join(''); }
+    function renderOrcamentos() { document.getElementById('list-orcamentos-container').innerHTML = db.entries.filter(e => e.tipo === 'orcamento').reverse().map(e => `<div class="list-item" onclick="editEntry(${e.id})"><div><strong>${e.cliente}</strong><br><small>R$ ${e.maoObra}</small></div><span class="os-badge">OS ${e.osNum}</span></div>`).join(''); }
+    function renderClientes() { const cli = [...new Set(db.entries.map(e => e.cliente))]; document.getElementById('list-clientes-container').innerHTML = cli.map(c => `<div class="list-item"><strong>${c}</strong></div>`).join(''); }
 
     showScreen('screen-home');
 </script>
