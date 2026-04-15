@@ -8,17 +8,17 @@
     <link rel="apple-touch-icon" href="apple-touch-icon.png">
 
     <script src="https://cdnjs.cloudflare.com/ajax/libs/html2pdf.js/0.10.1/html2pdf.bundle.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    
     <style>
         :root { --primary: #004a8d; --accent: #ff9800; --bg: #f4f7f6; --text: #333; --danger: #d9534f; }
         body { font-family: 'Segoe UI', system-ui, sans-serif; background: var(--bg); color: var(--text); margin: 0; padding: 0; }
         .container { max-width: 950px; margin: 0 auto; padding: 15px; }
         
-        /* Logo do App */
         .app-header { text-align: center; margin-bottom: 20px; }
         .app-header img { max-height: 70px; margin-bottom: 10px; border-radius: 8px; }
         .app-header h1 { margin: 0; font-size: 24px; color: var(--primary); }
 
-        /* Menu de Navegação */
         .nav-container { display: flex; gap: 8px; margin-bottom: 20px; overflow-x: auto; padding-bottom: 5px; }
         .nav-btn { flex: 1; min-width: 85px; background: #e0e0e0; color: var(--primary); border: none; padding: 12px 5px; border-radius: 8px; font-weight: bold; cursor: pointer; text-align: center; font-size: 14px; white-space: nowrap; }
         .nav-btn:hover, .nav-btn.active-nav { background: var(--primary); color: white; }
@@ -43,54 +43,60 @@
         .list-item { background: #fff; border-left: 5px solid var(--primary); padding: 15px; margin: 10px 0; border-radius: 8px; cursor: pointer; display: flex; justify-content: space-between; align-items: center; box-shadow: 0 2px 8px rgba(0,0,0,0.06); }
         .os-badge { background: #eee; padding: 4px 8px; border-radius: 4px; font-size: 12px; font-weight: bold; }
         
-        /* Design Lixeira E-mail */
         .del-btn { background: transparent; color: #a0a0a0; border: none; cursor: pointer; padding: 5px; transition: 0.2s; display: flex; align-items: center; justify-content: center; }
         .del-btn:hover { color: var(--danger); transform: scale(1.1); }
 
-        /* Numeração da Lista de Materiais no HTML */
-        #mat-container { counter-reset: mat-counter; }
-        .mat-grid { display: grid; grid-template-columns: 2fr 1fr 1fr; gap: 8px; margin-bottom: 10px; position: relative; padding-left: 25px; }
-        .mat-grid::before { counter-increment: mat-counter; content: counter(mat-counter) "."; position: absolute; left: 0; top: 15px; font-weight: bold; color: var(--primary); }
+        #mat-container, #gastos-container { counter-reset: item-counter; }
+        .item-grid { position: relative; padding-left: 35px; margin-bottom: 10px; }
+        .item-grid::before { counter-increment: item-counter; content: counter(item-counter) "."; position: absolute; left: 18px; top: 15px; font-weight: bold; color: var(--primary); }
+        .mat-grid { display: grid; grid-template-columns: 2fr 1fr 1fr; gap: 8px; }
+        .gasto-grid { display: grid; grid-template-columns: 1.5fr 1fr 1.5fr auto; gap: 8px; align-items: center; }
+        
+        .trash-item-btn { position: absolute; left: -10px; top: 10px; background: transparent; border: none; cursor: pointer; color: #a0a0a0; }
+        .trash-item-btn:hover { color: var(--danger); }
 
-        /* Badges de Status */
+        .clip-upload { cursor: pointer; color: var(--primary); padding: 10px; font-size: 18px; display: inline-block; border-radius: 4px; border: 1px solid #ddd; background: #f9f9f9; }
+        .clip-upload:hover { background: #e0e0e0; }
+
+        .autocomplete-list { position: absolute; width: calc(100% - 24px); background: white; border: 1px solid #ddd; max-height: 150px; overflow-y: auto; border-radius: 4px; box-shadow: 0 4px 6px rgba(0,0,0,0.1); z-index: 1000; display: none; margin-top: -5px; }
+        .autocomplete-item { padding: 10px; cursor: pointer; border-bottom: 1px solid #eee; }
+        .autocomplete-item:hover { background: #f0f0f0; }
+
         .badge-status { padding: 4px 8px; border-radius: 4px; font-size: 12px; font-weight: bold; color: white; display: inline-block; margin-top: 5px; }
-        .st-aguardando { background: #ff9800; } /* Laranja */
-        .st-aprovado { background: #ff9800; } /* Laranja */
-        .st-reprovado { background: #f44336; } /* Vermelho */
-        .st-iniciada { background: #8bc34a; } /* Verde claro */
-        .st-concluida { background: #2196f3; } /* Azul */
-        .st-cancelada { background: #9e9e9e; } /* Cinza */
+        .st-aguardando { background: #ff9800; } 
+        .st-aprovado { background: #ff9800; } 
+        .st-reprovado { background: #f44336; } 
+        .st-iniciada { background: #8bc34a; } 
+        .st-concluida { background: #2196f3; } 
+        .st-cancelada { background: #9e9e9e; } 
 
-        /* Painel de Status no Formulário */
         .status-panel { background: #f9f9f9; padding: 15px; border-radius: 8px; border: 1px solid #ddd; margin-bottom: 15px; }
         .status-btn-group { display: flex; gap: 5px; flex-wrap: wrap; margin-top: 10px; }
         .status-btn-group button { flex: 1; min-width: 140px; padding: 10px; font-size: 14px; margin: 0; }
         .radio-group { margin: 10px 0; }
         .radio-group label { display: inline; font-weight: normal; margin-right: 15px; color: var(--text); }
 
-        /* --- ESTILO PDF --- */
+        .fin-table { width: 100%; border-collapse: collapse; margin-top: 15px; font-size: 12px; }
+        .fin-table th, .fin-table td { border: 1px solid #ddd; padding: 8px; text-align: left; }
+        .fin-table th { background: var(--primary); color: white; }
+
         #print-area { position: absolute; left: -9999px; top: 0; }
         .pdf-content { width: 210mm; height: 297mm; padding: 10mm 15mm; background: white; color: black; font-family: Arial, sans-serif; box-sizing: border-box; display: flex; flex-direction: column; }
         .pdf-header { text-align: center; border-bottom: 2px solid #000; margin-bottom: 10px; padding-bottom: 10px; }
         .pdf-header img { max-height: 60px; margin-bottom: 5px; }
         .pdf-header h1 { margin: 0; font-size: 24pt; color: #004a8d; font-weight: bold; }
         .pdf-header p { margin: 5px 0; font-size: 11pt; font-weight: bold; text-transform: uppercase; }
-        
         .pdf-info { display: flex; flex-wrap: wrap; font-size: 11pt; border-bottom: 1px solid #000; padding: 10px 0; margin-bottom: 15px; }
         .pdf-info div { width: 50%; margin-bottom: 5px; }
-
         .pdf-body { display: flex; justify-content: space-between; gap: 20px; font-size: 10pt; line-height: 1.4; flex-grow: 1; }
         .pdf-col-left { width: 62%; }
         .pdf-col-right { width: 36%; }
-        
         .pdf-section-title { font-weight: bold; text-transform: uppercase; margin-top: 15px; margin-bottom: 5px; font-size: 11pt; border-bottom: 1px solid #ccc; }
         .pdf-body ul { padding-left: 18px; margin: 0; list-style-type: disc; }
         .pdf-body li { margin-bottom: 5px; }
-
         .pdf-table { width: 100%; border-collapse: collapse; margin-top: 15px; font-size: 10pt; }
         .pdf-table th, .pdf-table td { border: 1px solid #ccc; padding: 8px; text-align: left; }
         .pdf-table th { background: #f2f2f2; }
-
         .pdf-footer { text-align: center; font-size: 11pt; margin-top: auto; padding-bottom: 10mm; }
     </style>
 </head>
@@ -107,6 +113,7 @@
         <button id="nav-clientes" class="nav-btn" onclick="showScreen('screen-clientes')">Clientes</button>
         <button id="nav-os" class="nav-btn" onclick="showScreen('screen-os-list')">Ordens de Serviço</button>
         <button id="nav-orcamentos" class="nav-btn" onclick="showScreen('screen-orcamentos')">Orçamentos</button>
+        <button id="nav-financeiro" class="nav-btn" onclick="showScreen('screen-financeiro')">Financeiro</button>
     </div>
 
     <div id="screen-home" class="screen active">
@@ -142,6 +149,20 @@
         <div id="list-orcamentos-container"></div>
     </div>
 
+    <div id="screen-financeiro" class="screen card">
+        <h2>Financeiro Geral</h2>
+        <div style="max-width: 300px; margin: 0 auto 30px auto;">
+            <canvas id="chartGeral"></canvas>
+        </div>
+        <h3>Fechamento por OS</h3>
+        <div style="overflow-x: auto;">
+            <table class="fin-table" id="fin-geral-table">
+                <thead><tr><th>Data</th><th>Cliente (OS)</th><th>Entrada (R$)</th><th>Saída (R$)</th></tr></thead>
+                <tbody></tbody>
+            </table>
+        </div>
+    </div>
+
     <div id="screen-os-form" class="screen card">
         <h2 id="form-title">Ordem de Serviço</h2>
         <div style="text-align: right;"><span class="os-badge">OS Nº: <span id="os-number-display">0000</span></span></div>
@@ -154,9 +175,9 @@
             
             <div class="radio-group">
                 <strong style="color:var(--primary); display:block; margin-bottom:5px;">Tipo de Serviço Autorizado:</strong>
-                <input type="radio" id="auth-mao" name="f-auth" value="Mão de Obra">
+                <input type="radio" id="auth-mao" name="f-auth" value="Mão de Obra" onchange="atualizarFinanceiroOS()">
                 <label for="auth-mao">Aprovado Mão de obra</label>
-                <input type="radio" id="auth-emp" name="f-auth" value="Empreitada">
+                <input type="radio" id="auth-emp" name="f-auth" value="Empreitada" onchange="atualizarFinanceiroOS()">
                 <label for="auth-emp">Aprovado Empreitada</label>
             </div>
 
@@ -170,7 +191,12 @@
             <input type="hidden" id="f-status" value="aguardando">
         </div>
         
-        <label>Cliente</label><input type="text" id="f-cliente">
+        <div style="position:relative;">
+            <label>Cliente</label>
+            <input type="text" id="f-cliente" onkeyup="buscarCliente(this.value)" onfocus="buscarCliente(this.value)" autocomplete="off">
+            <div id="autocomplete-clientes" class="autocomplete-list"></div>
+        </div>
+        
         <label>Endereço</label><input type="text" id="f-endereco">
         <label>Data</label><input type="date" id="f-data-os">
         
@@ -184,8 +210,8 @@
             <label>Escopo do Trabalho</label><textarea id="f-escopo" rows="6"></textarea>
             <label>Diferencial e Garantia</label><textarea id="f-garantia" rows="3"></textarea>
             <label>Tempo de Serviço</label><input type="text" id="f-tempo" placeholder="Ex: 2 dias úteis">
-            <label>Valor da Mão de Obra (R$)</label><input type="number" id="f-mao-obra">
-            <label>Valor Total da Empreitada (Materiais + Mão de Obra) (R$)</label><input type="number" id="f-empreitada">
+            <label>Valor da Mão de Obra (R$)</label><input type="number" id="f-mao-obra" oninput="atualizarFinanceiroOS()">
+            <label>Valor Total da Empreitada (Materiais + Mão de Obra) (R$)</label><input type="number" id="f-empreitada" oninput="atualizarFinanceiroOS()">
         </div>
 
         <div id="fields-lista" style="display:none;">
@@ -193,8 +219,23 @@
             <button class="btn btn-outline" onclick="addMaterialRow()">+ Adicionar Item</button>
         </div>
 
+        <div class="status-panel" style="margin-top: 20px;">
+            <h3 style="margin-top:0; color:var(--primary);">Financeiro desta OS</h3>
+            <div style="display:flex; flex-wrap:wrap; align-items:center; justify-content:space-between;">
+                <div style="width: 150px; margin: 0 auto;"><canvas id="chartOS"></canvas></div>
+                <div style="flex-grow:1; min-width:200px; padding:10px; text-align:center;">
+                    <p style="margin:5px 0;"><strong>Entrada Recebida:</strong> <span id="lbl-entrada-os" style="color:#28a745;">R$ 0,00</span></p>
+                    <p style="margin:5px 0;"><strong>Saídas (Gastos):</strong> <span id="lbl-saida-os" style="color:#d9534f;">R$ 0,00</span></p>
+                </div>
+            </div>
+            
+            <h4 style="margin-bottom:10px; color:var(--primary);">Lista de Gastos</h4>
+            <div id="gastos-container"></div>
+            <button class="btn btn-outline" onclick="addGastoRow()">+ Adicionar Gasto</button>
+        </div>
+
         <button class="btn" onclick="saveData()">💾 Salvar no iPhone</button>
-        <button class="btn btn-accent" id="btn-pdf" style="display:none;" onclick="exportPDF()">📄 Gerar PDF Profissional</button>
+        <button class="btn btn-accent" id="btn-pdf" onclick="exportPDF()">📄 Gerar PDF Profissional</button>
         <button class="btn btn-outline" onclick="showScreen('screen-home')">Voltar</button>
     </div>
 </div>
@@ -222,6 +263,8 @@
 <script>
     let db = JSON.parse(localStorage.getItem('hs_database')) || { lastOS: 1000, entries: [] };
     let currentId = null;
+    let chartGeralInstance = null;
+    let chartOSInstance = null;
 
     const STATUS_MAP = {
         'aguardando': { text: 'Aguardando Aprovação de Orçamento', cls: 'st-aguardando' },
@@ -236,30 +279,9 @@
         if(db.entries.length === 0) {
             db.entries.push({
                 id: 1, osNum: 1001, cliente: "Quintal dos Amigos Lounge & Bar", endereco: "Rua Euclides Pacheco 233 - Tatuapé, São Paulo- SP",
-                dataRaw: "2026-04-09", data: "09/04/2026", tipo: "lista", status: "aguardando", authType: "", escopo: "", garantia: "", tempo: "", maoObra: "", empreitada: "",
-                materiais: [
-                    {d: "Fonte Chaveada Slim 12V 20A (Letreiros/Espelho)", q: "2", v: "125.00"},
-                    {d: "Fonte Chaveada 12V 5A (Parede Viva)", q: "2", v: "45.00"},
-                    {d: "Spot LED Embutir 7W Direcionável (Corredor/Banheiro)", q: "4", v: "28.00"},
-                    {d: "Lâmpada LED Tubular T8 18W (Cozinha/Serviço)", q: "6", v: "22.00"},
-                    {d: "Plafon LED Sobrepor Quadrado 24W (Cozinha/Serviço)", q: "6", v: "48.00"},
-                    {d: "Arandela Interna Parede (Debaixo da Escada)", q: "2", v: "65.00"},
-                    {d: "Lâmpada LED Bulbo E27 9W (Para Arandela)", q: "2", v: "12.00"},
-                    {d: "Fita de Cobre Adesiva Condutora (Vitrine)", q: "1", v: "185.00"},
-                    {d: "Cabo Flexível 1,5mm² (Rolo 50m)", q: "1", v: "115.00"},
-                    {d: "Lâmpada LED Dicróica MR16 (Substituição Banheiro)", q: "2", v: "18.50"},
-                    {d: "Barramento LED Linear de Sobrepor (Teto)", q: "1", v: "134.90"},
-                    {d: "Materiais de Fixação (Buchas, Parafusos, Wago)", q: "1", v: "120.00"}
-                ]
+                dataRaw: "2026-04-09", data: "09/04/2026", tipo: "lista", status: "aguardando", authType: "", escopo: "", garantia: "", tempo: "", maoObra: "", empreitada: "", materiais: [], gastos: []
             });
-            db.entries.push({
-                id: 2, osNum: 1002, cliente: "Quintal Rooftop", endereco: "Rua Euclides Pacheco 233 - Tatuapé, São Paulo- SP",
-                dataRaw: "2026-04-09", data: "09/04/2026", tipo: "orcamento", status: "aguardando", authType: "",
-                escopo: "Troca de 2 lâmpadas led no banheiro feminino;\nSubstituição de duas fontes de led letreiro e espelho no forro de drywall;\nInstalação de 2 spots led no corredor;\nTroca de 2 fontes de led letreiro na parede viva;\nInstalar dois pontos de arandela na parede debaixo da escada com lâmpada convencional;\nInstalação de dois spots led embutir no banheiro masculino;\nSubstituir barramento led de sobrepor no teto;\nReparo em 4 fritadeiras;\nSolucionar lâmpada que fica ligada por retorno de fase;\nSistema de fita de cobre condutora na vitrine de bebidas;\nTroca de 6 lâmpadas sobrepor e embutir na cozinha e área de serviços.",
-                garantia: "Garantia de 90 dias para os serviços executados conforme CDC.\nMão de obra técnica especializada em manutenção e infraestrutura.",
-                tempo: "Dois dias inteiros de serviço", maoObra: "1300", empreitada: "2950", materiais: []
-            });
-            db.lastOS = 1002; localStorage.setItem('hs_database', JSON.stringify(db));
+            db.lastOS = 1001; localStorage.setItem('hs_database', JSON.stringify(db));
         }
     }
     injectInitialData();
@@ -272,12 +294,13 @@
         else if(id === 'screen-clientes') { document.getElementById('nav-clientes').classList.add('active-nav'); renderClientes(); }
         else if(id === 'screen-os-list') { document.getElementById('nav-os').classList.add('active-nav'); renderAllOS(); }
         else if(id === 'screen-orcamentos') { document.getElementById('nav-orcamentos').classList.add('active-nav'); renderOrcamentos(); }
+        else if(id === 'screen-financeiro') { document.getElementById('nav-financeiro').classList.add('active-nav'); renderFinanceiroGeral(); }
     }
+
+    const trashIconSVG = `<svg viewBox="0 0 24 24" width="20" height="20" stroke="currentColor" stroke-width="2" fill="none" stroke-linecap="round" stroke-linejoin="round"><polyline points="3 6 5 6 21 6"></polyline><path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"></path><line x1="10" y1="11" x2="10" y2="17"></line><line x1="14" y1="11" x2="14" y2="17"></line></svg>`;
 
     function getListItemHTML(e) {
         const st = STATUS_MAP[e.status || 'aguardando'];
-        const trashIcon = `<svg viewBox="0 0 24 24" width="22" height="22" stroke="currentColor" stroke-width="2" fill="none" stroke-linecap="round" stroke-linejoin="round"><polyline points="3 6 5 6 21 6"></polyline><path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"></path><line x1="10" y1="11" x2="10" y2="17"></line><line x1="14" y1="11" x2="14" y2="17"></line></svg>`;
-        
         return `<div class="list-item" onclick="editEntry(${e.id})">
             <div style="flex-grow: 1;">
                 <strong>${e.cliente}</strong><br>
@@ -286,7 +309,7 @@
             </div>
             <div style="display: flex; flex-direction: column; align-items: flex-end; gap: 8px;">
                 <span class="os-badge">OS ${e.osNum}</span>
-                <button class="del-btn" onclick="event.stopPropagation(); deleteEntryById(${e.id})" title="Excluir">${trashIcon}</button>
+                <button class="del-btn" onclick="event.stopPropagation(); deleteEntryById(${e.id})" title="Excluir">${trashIconSVG}</button>
             </div>
         </div>`;
     }
@@ -330,28 +353,62 @@
         }
     }
 
+    function buscarCliente(val) {
+        const list = document.getElementById('autocomplete-clientes');
+        const cliUnicos = [...new Map(db.entries.map(e => [e.cliente, e])).values()];
+        
+        let res = cliUnicos;
+        if(val) {
+            res = cliUnicos.filter(e => e.cliente.toLowerCase().includes(val.toLowerCase()));
+        }
+
+        if(res.length > 0) {
+            list.innerHTML = res.map(e => {
+                const safeNome = e.cliente.replace(/'/g, "\\'").replace(/"/g, "&quot;");
+                const safeEnd = (e.endereco || '').replace(/'/g, "\\'").replace(/"/g, "&quot;");
+                return `<div class="autocomplete-item" onclick="selecionarCliente('${safeNome}', '${safeEnd}')">${e.cliente}</div>`;
+            }).join('');
+            list.style.display = 'block';
+        } else { 
+            list.style.display = 'none'; 
+        }
+    }
+
+    function selecionarCliente(nome, endereco) {
+        document.getElementById('f-cliente').value = nome;
+        document.getElementById('f-endereco').value = endereco;
+        document.getElementById('autocomplete-clientes').style.display = 'none';
+    }
+
+    document.addEventListener('click', function(e) { 
+        if(e.target.id !== 'f-cliente') {
+            document.getElementById('autocomplete-clientes').style.display = 'none'; 
+        }
+    });
+
     function setStatus(newStatus) {
         document.getElementById('f-status').value = newStatus;
         const st = STATUS_MAP[newStatus];
         const display = document.getElementById('display-status');
         display.className = `badge-status ${st.cls}`;
         display.innerText = st.text;
+        atualizarFinanceiroOS();
     }
 
     function openNewOS() {
         currentId = null;
         document.getElementById('os-number-display').innerText = db.lastOS + 1;
-        document.getElementById('btn-pdf').style.display = 'none';
         
         setStatus('aguardando');
-        document.getElementById('auth-mao').checked = false;
-        document.getElementById('auth-emp').checked = false;
-
+        document.getElementById('auth-mao').checked = false; document.getElementById('auth-emp').checked = false;
         document.getElementById('f-cliente').value = ''; document.getElementById('f-endereco').value = '';
         document.getElementById('f-data-os').valueAsDate = new Date();
         document.getElementById('f-escopo').value = ''; document.getElementById('f-garantia').value = '';
         document.getElementById('f-tempo').value = ''; document.getElementById('f-mao-obra').value = ''; document.getElementById('f-empreitada').value = '';
         document.getElementById('mat-container').innerHTML = ''; addMaterialRow();
+        document.getElementById('gastos-container').innerHTML = '';
+        
+        atualizarFinanceiroOS();
         document.querySelectorAll('.screen').forEach(s => s.classList.remove('active'));
         document.getElementById('screen-os-form').classList.add('active');
     }
@@ -362,58 +419,143 @@
         document.getElementById('fields-lista').style.display = tipo === 'lista' ? 'block' : 'none';
     }
 
-    function addMaterialRow() {
-        const div = document.createElement('div'); div.className = 'mat-grid';
-        div.innerHTML = `<input type="text" placeholder="Material" class="m-d"><input type="number" placeholder="Qtd" class="m-q"><input type="number" placeholder="V.U" class="m-v">`;
+    function removerItem(btn) {
+        if(confirm('Realmente deseja apagar este item?')) {
+            btn.parentElement.remove();
+            atualizarFinanceiroOS();
+        }
+    }
+
+    function addMaterialRow(d='', q='', v='') {
+        const div = document.createElement('div'); div.className = 'item-grid mat-grid';
+        div.innerHTML = `
+            <button class="trash-item-btn" onclick="removerItem(this)" title="Excluir">${trashIconSVG}</button>
+            <input type="text" placeholder="Material" class="m-d" value="${d}">
+            <input type="number" placeholder="Qtd" class="m-q" value="${q}">
+            <input type="number" placeholder="V.U" class="m-v" value="${v}">`;
         document.getElementById('mat-container').appendChild(div);
+    }
+
+    function addGastoRow(tipo='', val='', est='') {
+        const div = document.createElement('div'); div.className = 'item-grid gasto-grid';
+        div.innerHTML = `
+            <button class="trash-item-btn" onclick="removerItem(this)" title="Excluir">${trashIconSVG}</button>
+            <select class="g-t">
+                <option value="Material" ${tipo==='Material'?'selected':''}>🛠️ Material</option>
+                <option value="Combustível" ${tipo==='Combustível'?'selected':''}>⛽ Combustível</option>
+                <option value="Refeição" ${tipo==='Refeição'?'selected':''}>🍽️ Refeição</option>
+                <option value="Ferramenta" ${tipo==='Ferramenta'?'selected':''}>🔧 Ferramenta</option>
+                <option value="Outros" ${tipo==='Outros'?'selected':''}>📝 Outros</option>
+            </select>
+            <input type="number" placeholder="Valor" class="g-v" value="${val}" oninput="atualizarFinanceiroOS()">
+            <input type="text" placeholder="Estabelecimento" class="g-e" value="${est}">
+            <label class="clip-upload" title="Anexar Nota">📎<input type="file" style="display:none;" accept="image/*,.pdf"></label>`;
+        document.getElementById('gastos-container').appendChild(div);
+    }
+
+    function calcEntradaOS(status, authType, mao, emp) {
+        const valorMao = parseFloat(mao) || 0;
+        const valorEmp = parseFloat(emp) || 0;
+        const valorBase = (authType === 'Empreitada') ? valorEmp : (authType === 'Mão de Obra') ? valorMao : 0;
+
+        if (status === 'concluida') {
+            return valorBase; 
+        } else if (['aprovado', 'iniciada'].includes(status)) {
+            return valorBase * 0.5; 
+        }
+        return 0;
+    }
+
+    function atualizarFinanceiroOS() {
+        const status = document.getElementById('f-status').value;
+        let auth = "";
+        if(document.getElementById('auth-mao').checked) auth = "Mão de Obra";
+        if(document.getElementById('auth-emp').checked) auth = "Empreitada";
+        const mao = document.getElementById('f-mao-obra').value;
+        const emp = document.getElementById('f-empreitada').value;
+
+        const entrada = calcEntradaOS(status, auth, mao, emp);
+        let saida = 0;
+        document.querySelectorAll('.g-v').forEach(el => saida += parseFloat(el.value) || 0);
+
+        document.getElementById('lbl-entrada-os').innerText = `R$ ${entrada.toFixed(2).replace('.',',')}`;
+        document.getElementById('lbl-saida-os').innerText = `R$ ${saida.toFixed(2).replace('.',',')}`;
+
+        if(chartOSInstance) chartOSInstance.destroy();
+        chartOSInstance = new Chart(document.getElementById('chartOS'), {
+            type: 'doughnut',
+            data: { labels: ['Entrada', 'Saídas'], datasets: [{ data: [entrada, saida], backgroundColor: ['#28a745', '#d9534f'] }] },
+            options: { plugins: { legend: { display: false } }, responsive: true, maintainAspectRatio: false }
+        });
+    }
+
+    function renderFinanceiroGeral() {
+        let tEntrada = 0, tSaida = 0;
+        let tbody = '';
+        db.entries.forEach(e => {
+            let ent = calcEntradaOS(e.status, e.authType, e.maoObra, e.empreitada);
+            let sai = 0;
+            if(e.gastos) e.gastos.forEach(g => sai += parseFloat(g.v) || 0);
+            tEntrada += ent; tSaida += sai;
+            if(ent > 0 || sai > 0) {
+                tbody += `<tr><td>${e.data}</td><td>${e.cliente} <br><small>OS ${e.osNum}</small></td><td style="color:#28a745;">R$ ${ent.toFixed(2).replace('.',',')}</td><td style="color:#d9534f;">R$ ${sai.toFixed(2).replace('.',',')}</td></tr>`;
+            }
+        });
+        document.querySelector('#fin-geral-table tbody').innerHTML = tbody || '<tr><td colspan="4" style="text-align:center;">Nenhum registro financeiro encontrado.</td></tr>';
+        if(chartGeralInstance) chartGeralInstance.destroy();
+        chartGeralInstance = new Chart(document.getElementById('chartGeral'), {
+            type: 'doughnut',
+            data: { labels: ['Entradas', 'Saídas'], datasets: [{ data: [tEntrada, tSaida], backgroundColor: ['#28a745', '#d9534f'] }] },
+            options: { responsive: true }
+        });
     }
 
     function saveData() {
         let authSelected = "";
         if(document.getElementById('auth-mao').checked) authSelected = "Mão de Obra";
         if(document.getElementById('auth-emp').checked) authSelected = "Empreitada";
-
         const entry = {
             id: currentId || Date.now(), osNum: currentId ? parseInt(document.getElementById('os-number-display').innerText) : ++db.lastOS,
             cliente: document.getElementById('f-cliente').value, endereco: document.getElementById('f-endereco').value,
             dataRaw: document.getElementById('f-data-os').value, data: document.getElementById('f-data-os').value.split('-').reverse().join('/'),
-            tipo: document.getElementById('f-tipo').value, 
-            status: document.getElementById('f-status').value, authType: authSelected,
+            tipo: document.getElementById('f-tipo').value, status: document.getElementById('f-status').value, authType: authSelected,
             escopo: document.getElementById('f-escopo').value, garantia: document.getElementById('f-garantia').value,
             tempo: document.getElementById('f-tempo').value, maoObra: document.getElementById('f-mao-obra').value, empreitada: document.getElementById('f-empreitada').value,
-            materiais: Array.from(document.querySelectorAll('.mat-grid')).map(row => ({d: row.querySelector('.m-d').value, q: row.querySelector('.m-q').value, v: row.querySelector('.m-v').value})).filter(m => m.d)
+            materiais: Array.from(document.querySelectorAll('.mat-grid')).map(row => ({d: row.querySelector('.m-d').value, q: row.querySelector('.m-q').value, v: row.querySelector('.m-v').value})).filter(m => m.d !== ""),
+            gastos: Array.from(document.querySelectorAll('.gasto-grid')).map(row => ({t: row.querySelector('.g-t').value, v: row.querySelector('.g-v').value, e: row.querySelector('.g-e').value})).filter(g => g.v !== "")
         };
         if(currentId) db.entries = db.entries.map(e => e.id === currentId ? entry : e); else db.entries.push(entry);
-        localStorage.setItem('hs_database', JSON.stringify(db)); alert("Salvo com sucesso!"); showScreen('screen-home');
+        localStorage.setItem('hs_database', JSON.stringify(db)); 
+        alert("Salvo com sucesso!"); 
     }
 
     function editEntry(id) {
         const e = db.entries.find(en => en.id === id); currentId = e.id;
         document.getElementById('os-number-display').innerText = e.osNum;
-        
         setStatus(e.status || 'aguardando');
         if(e.authType === 'Mão de Obra') document.getElementById('auth-mao').checked = true;
         else if(e.authType === 'Empreitada') document.getElementById('auth-emp').checked = true;
         else { document.getElementById('auth-mao').checked = false; document.getElementById('auth-emp').checked = false; }
-
         document.getElementById('f-cliente').value = e.cliente; document.getElementById('f-endereco').value = e.endereco;
         document.getElementById('f-data-os').value = e.dataRaw; document.getElementById('f-tipo').value = e.tipo;
         document.getElementById('f-escopo').value = e.escopo; document.getElementById('f-garantia').value = e.garantia;
         document.getElementById('f-tempo').value = e.tempo || ''; document.getElementById('f-mao-obra').value = e.maoObra; document.getElementById('f-empreitada').value = e.empreitada;
         const mc = document.getElementById('mat-container'); mc.innerHTML = '';
-        e.materiais.forEach(m => {
-            const div = document.createElement('div'); div.className = 'mat-grid';
-            div.innerHTML = `<input type="text" value="${m.d}" class="m-d"><input type="number" value="${m.q}" class="m-q"><input type="number" value="${m.v}" class="m-v">`;
-            mc.appendChild(div);
-        });
-        if(e.materiais.length === 0) addMaterialRow();
+        if(e.materiais) e.materiais.forEach(m => addMaterialRow(m.d, m.q, m.v));
+        if(!e.materiais || e.materiais.length === 0) addMaterialRow();
+        const gc = document.getElementById('gastos-container'); gc.innerHTML = '';
+        if(e.gastos) e.gastos.forEach(g => addGastoRow(g.t, g.v, g.e));
         toggleFormFields();
-        document.getElementById('btn-pdf').style.display = 'block';
-        document.querySelectorAll('.screen').forEach(s => s.classList.remove('active')); document.getElementById('screen-os-form').classList.add('active');
+        atualizarFinanceiroOS();
+        
+        document.querySelectorAll('.screen').forEach(s => s.classList.remove('active')); 
+        document.getElementById('screen-os-form').classList.add('active');
     }
 
     function exportPDF() {
         const e = db.entries.find(en => en.id === currentId);
+        if(!e) { alert('Salve os dados primeiro antes de gerar o PDF!'); return; }
+        
         document.getElementById('p-cliente').innerText = e.cliente; document.getElementById('p-data').innerText = e.data;
         document.getElementById('p-endereco').innerText = e.endereco; document.getElementById('p-os-num').innerText = e.osNum;
         let html = '';
