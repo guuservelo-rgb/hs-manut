@@ -128,12 +128,25 @@
 
     <div id="screen-clientes" class="screen card">
         <h2>Lista de Clientes</h2>
+        <button class="btn" onclick="openNovoCliente()" style="margin-bottom: 15px;">+ Criar Novo Cliente</button>
         <div id="list-clientes-container"></div>
+    </div>
+
+    <div id="screen-cliente-form" class="screen card">
+        <h2>Criar Novo Cliente</h2>
+        <label>Nome do Cliente / Empresa</label><input type="text" id="c-nome" placeholder="Nome completo ou Razão Social">
+        <label>Endereço</label><input type="text" id="c-endereco" placeholder="Endereço completo">
+        <label>Responsável</label><input type="text" id="c-responsavel" placeholder="Nome do contato responsável">
+        <label>Contato (Telefone/Email)</label><input type="text" id="c-contato" placeholder="(11) 99999-9999">
+        
+        <button class="btn" style="margin-top: 15px;" onclick="saveCliente()">💾 Salvar Cliente</button>
+        <button class="btn btn-outline" onclick="showScreen('screen-clientes')">Cancelar</button>
     </div>
 
     <div id="screen-cliente-detalhes" class="screen card">
         <h2 id="detalhe-nome-cliente">Nome do Cliente</h2>
         <p><strong>Endereço Base:</strong> <span id="detalhe-end-cliente"></span></p>
+        <p id="detalhe-extra-cliente" style="display:none; font-size:14px; margin-top:-5px; color:#555;"></p>
         <button class="btn btn-outline" onclick="showScreen('screen-clientes')" style="margin-bottom: 20px;">Voltar para Clientes</button>
         <h3>Histórico de Ordens de Serviço</h3>
         <div id="list-cliente-os"></div>
@@ -261,7 +274,9 @@
 </div>
 
 <script>
-    let db = JSON.parse(localStorage.getItem('hs_database')) || { lastOS: 1000, entries: [] };
+    let db = JSON.parse(localStorage.getItem('hs_database')) || { lastOS: 1000, entries: [], clientes: [] };
+    if(!db.clientes) db.clientes = []; // Garantir que a lista de clientes exista
+
     let currentId = null;
     let chartGeralInstance = null;
     let chartOSInstance = null;
@@ -274,17 +289,6 @@
         'concluida': { text: 'Ordem de Serviço Concluída', cls: 'st-concluida' },
         'cancelada': { text: 'Ordem de Serviço Cancelada', cls: 'st-cancelada' }
     };
-
-    function injectInitialData() {
-        if(db.entries.length === 0) {
-            db.entries.push({
-                id: 1, osNum: 1001, cliente: "Quintal dos Amigos Lounge & Bar", endereco: "Rua Euclides Pacheco 233 - Tatuapé, São Paulo- SP",
-                dataRaw: "2026-04-09", data: "09/04/2026", tipo: "lista", status: "aguardando", authType: "", escopo: "", garantia: "", tempo: "", maoObra: "", empreitada: "", materiais: [], gastos: []
-            });
-            db.lastOS = 1001; localStorage.setItem('hs_database', JSON.stringify(db));
-        }
-    }
-    injectInitialData();
 
     function showScreen(id) {
         document.querySelectorAll('.screen').forEach(s => s.classList.remove('active'));
@@ -324,8 +328,38 @@
     function renderAllOS() { document.getElementById('list-todas-os-container').innerHTML = db.entries.slice().reverse().map(getListItemHTML).join(''); }
     function renderOrcamentos() { document.getElementById('list-orcamentos-container').innerHTML = db.entries.filter(e => e.tipo === 'orcamento').reverse().map(getListItemHTML).join(''); }
     
+    // --- LÓGICA DE CLIENTES ---
+    function openNovoCliente() {
+        document.getElementById('c-nome').value = '';
+        document.getElementById('c-endereco').value = '';
+        document.getElementById('c-responsavel').value = '';
+        document.getElementById('c-contato').value = '';
+        showScreen('screen-cliente-form');
+    }
+
+    function saveCliente() {
+        const nome = document.getElementById('c-nome').value.trim();
+        if(!nome) { alert("O nome do cliente é obrigatório!"); return; }
+        const cli = {
+            nome: nome,
+            endereco: document.getElementById('c-endereco').value,
+            responsavel: document.getElementById('c-responsavel').value,
+            contato: document.getElementById('c-contato').value
+        };
+        db.clientes.push(cli);
+        localStorage.setItem('hs_database', JSON.stringify(db));
+        alert("Cliente salvo com sucesso!");
+        showScreen('screen-clientes');
+    }
+
     function renderClientes() {
-        const cliUnicos = [...new Set(db.entries.map(e => e.cliente))];
+        // Pega clientes das OS's antigas
+        const cliFromEntries = [...new Set(db.entries.map(e => e.cliente))].filter(c => c);
+        // Pega clientes da nova lista
+        const cliFromDb = db.clientes.map(c => c.nome);
+        // Junta todos sem repetir
+        const cliUnicos = [...new Set([...cliFromEntries, ...cliFromDb])];
+        
         document.getElementById('list-clientes-container').innerHTML = cliUnicos.map(cli => `
             <div class="list-item" onclick="openClienteDetalhes('${cli}')">
                 <strong style="font-size: 18px;">${cli}</strong><span style="color: var(--primary);">Ver Histórico ➔</span>
@@ -334,39 +368,46 @@
 
     function openClienteDetalhes(nome) {
         document.getElementById('detalhe-nome-cliente').innerText = nome;
-        const e = db.entries.find(en => en.cliente === nome);
-        document.getElementById('detalhe-end-cliente').innerText = e ? e.endereco : '';
-        document.getElementById('list-cliente-os').innerHTML = db.entries.filter(en => en.cliente === nome).reverse().map(getListItemHTML).join('');
+        
+        // Tenta achar endereço na base de clientes primeiro, se não achar, procura nas OSs
+        const cliDb = db.clientes.find(c => c.nome === nome);
+        const cliOs = db.entries.find(en => en.cliente === nome);
+        
+        document.getElementById('detalhe-end-cliente').innerText = cliDb ? cliDb.endereco : (cliOs ? cliOs.endereco : '');
+        
+        const extra = document.getElementById('detalhe-extra-cliente');
+        if(cliDb && (cliDb.responsavel || cliDb.contato)) {
+            extra.innerHTML = `<strong>Resp:</strong> ${cliDb.responsavel || '-'} | <strong>Contato:</strong> ${cliDb.contato || '-'}`;
+            extra.style.display = 'block';
+        } else {
+            extra.style.display = 'none';
+        }
+
+        const historico = db.entries.filter(en => en.cliente === nome).reverse();
+        document.getElementById('list-cliente-os').innerHTML = historico.length > 0 ? historico.map(getListItemHTML).join('') : '<p style="text-align:center; color:#777;">Nenhuma OS para este cliente ainda.</p>';
+        
         document.querySelectorAll('.screen').forEach(s => s.classList.remove('active'));
         document.getElementById('screen-cliente-detalhes').classList.add('active');
     }
 
-    function deleteEntryById(id) {
-        const e = db.entries.find(en => en.id === id);
-        if(confirm(`Tem certeza que deseja excluir ${e.tipo === 'orcamento' ? 'o orçamento' : 'a lista'} da OS ${e.osNum} do cliente "${e.cliente}"?`)) {
-            db.entries = db.entries.filter(en => en.id !== id);
-            localStorage.setItem('hs_database', JSON.stringify(db));
-            if(document.getElementById('screen-home').classList.contains('active')) renderHome();
-            if(document.getElementById('screen-os-list').classList.contains('active')) renderAllOS();
-            if(document.getElementById('screen-orcamentos').classList.contains('active')) renderOrcamentos();
-            if(document.getElementById('screen-cliente-detalhes').classList.contains('active')) openClienteDetalhes(e.cliente);
-        }
-    }
-
     function buscarCliente(val) {
         const list = document.getElementById('autocomplete-clientes');
-        const cliUnicos = [...new Map(db.entries.map(e => [e.cliente, e])).values()];
         
-        let res = cliUnicos;
+        // Mapear primeiro as OSs, depois sobrepor com a base de clientes (que tem prioridade)
+        const mapEntries = new Map(db.entries.map(e => [e.cliente, e.endereco]));
+        db.clientes.forEach(c => mapEntries.set(c.nome, c.endereco));
+        
+        let res = Array.from(mapEntries, ([nome, endereco]) => ({ nome, endereco }));
+        
         if(val) {
-            res = cliUnicos.filter(e => e.cliente.toLowerCase().includes(val.toLowerCase()));
+            res = res.filter(e => e.nome.toLowerCase().includes(val.toLowerCase()));
         }
 
         if(res.length > 0) {
             list.innerHTML = res.map(e => {
-                const safeNome = e.cliente.replace(/'/g, "\\'").replace(/"/g, "&quot;");
+                const safeNome = e.nome.replace(/'/g, "\\'").replace(/"/g, "&quot;");
                 const safeEnd = (e.endereco || '').replace(/'/g, "\\'").replace(/"/g, "&quot;");
-                return `<div class="autocomplete-item" onclick="selecionarCliente('${safeNome}', '${safeEnd}')">${e.cliente}</div>`;
+                return `<div class="autocomplete-item" onclick="selecionarCliente('${safeNome}', '${safeEnd}')">${e.nome}</div>`;
             }).join('');
             list.style.display = 'block';
         } else { 
@@ -381,10 +422,22 @@
     }
 
     document.addEventListener('click', function(e) { 
-        if(e.target.id !== 'f-cliente') {
-            document.getElementById('autocomplete-clientes').style.display = 'none'; 
-        }
+        if(e.target.id !== 'f-cliente') document.getElementById('autocomplete-clientes').style.display = 'none'; 
     });
+
+    // --- FIM LÓGICA DE CLIENTES ---
+
+    function deleteEntryById(id) {
+        const e = db.entries.find(en => en.id === id);
+        if(confirm(`Tem certeza que deseja excluir ${e.tipo === 'orcamento' ? 'o orçamento' : 'a lista'} da OS ${e.osNum} do cliente "${e.cliente}"?`)) {
+            db.entries = db.entries.filter(en => en.id !== id);
+            localStorage.setItem('hs_database', JSON.stringify(db));
+            if(document.getElementById('screen-home').classList.contains('active')) renderHome();
+            if(document.getElementById('screen-os-list').classList.contains('active')) renderAllOS();
+            if(document.getElementById('screen-orcamentos').classList.contains('active')) renderOrcamentos();
+            if(document.getElementById('screen-cliente-detalhes').classList.contains('active')) openClienteDetalhes(e.cliente);
+        }
+    }
 
     function setStatus(newStatus) {
         document.getElementById('f-status').value = newStatus;
@@ -526,6 +579,7 @@
         };
         if(currentId) db.entries = db.entries.map(e => e.id === currentId ? entry : e); else db.entries.push(entry);
         localStorage.setItem('hs_database', JSON.stringify(db)); 
+        currentId = entry.id; // Atualiza o ID atual após salvar a nova
         alert("Salvo com sucesso!"); 
     }
 
@@ -553,36 +607,56 @@
     }
 
     function exportPDF() {
-        const e = db.entries.find(en => en.id === currentId);
-        if(!e) { alert('Salve os dados primeiro antes de gerar o PDF!'); return; }
+        // Lendo diretamente os valores que estão digitados na tela
+        const tipo = document.getElementById('f-tipo').value;
+        const cliente = document.getElementById('f-cliente').value;
+        const endereco = document.getElementById('f-endereco').value;
+        const dataRaw = document.getElementById('f-data-os').value;
+        const dataFormatada = dataRaw ? dataRaw.split('-').reverse().join('/') : '';
+        const osNum = document.getElementById('os-number-display').innerText;
+
+        document.getElementById('p-cliente').innerText = cliente; 
+        document.getElementById('p-data').innerText = dataFormatada;
+        document.getElementById('p-endereco').innerText = endereco; 
+        document.getElementById('p-os-num').innerText = osNum;
         
-        document.getElementById('p-cliente').innerText = e.cliente; document.getElementById('p-data').innerText = e.data;
-        document.getElementById('p-endereco').innerText = e.endereco; document.getElementById('p-os-num').innerText = e.osNum;
         let html = '';
-        if(e.tipo === 'orcamento') {
+        if(tipo === 'orcamento') {
             document.getElementById('pdf-tipo-txt').innerText = "PROPOSTA DE SERVIÇO DE MANUTENÇÃO E INSTALAÇÃO ELÉTRICA ESPECIALIZADA";
+            const escopo = document.getElementById('f-escopo').value;
+            const garantia = document.getElementById('f-garantia').value;
+            const tempo = document.getElementById('f-tempo').value;
+            const maoObra = document.getElementById('f-mao-obra').value;
+            const empreitada = document.getElementById('f-empreitada').value;
+
             html = `<div class="pdf-body"><div class="pdf-col-left">
-                    <div class="pdf-section-title">Escopo do Trabalho:</div><ul>${e.escopo.split('\n').filter(l => l.trim() !== '').map(l => `<li>${l}</li>`).join('')}</ul>
+                    <div class="pdf-section-title">Escopo do Trabalho:</div><ul>${escopo.split('\n').filter(l => l.trim() !== '').map(l => `<li>${l}</li>`).join('')}</ul>
                     <div class="pdf-section-title">Responsável Técnico:</div><ul><li>Nome do Responsável: <strong>Higor Servelo</strong></li></ul>
-                    <div class="pdf-section-title">Tempo de Serviço:</div><ul><li>Previsão de execução: <strong>${e.tempo}</strong></li></ul>
+                    <div class="pdf-section-title">Tempo de Serviço:</div><ul><li>Previsão de execução: <strong>${tempo}</strong></li></ul>
                 </div><div class="pdf-col-right">
-                    <div class="pdf-section-title">Diferencial e Garantia:</div><ul>${e.garantia.split('\n').filter(l => l.trim() !== '').map(l => `<li>${l}</li>`).join('')}</ul>
+                    <div class="pdf-section-title">Diferencial e Garantia:</div><ul>${garantia.split('\n').filter(l => l.trim() !== '').map(l => `<li>${l}</li>`).join('')}</ul>
                     <div class="pdf-section-title">Investimento:</div><ul style="list-style:none; padding:0;">
-                        <li><strong>Valor da mão de obra: R$ ${parseFloat(e.maoObra || 0).toLocaleString('pt-BR', {minimumFractionDigits: 2})}</strong></li>
-                        <li style="margin-top:10px;">Nota: Valor referente à mão de obra. O custo total de <strong>empreitada</strong> (materiais e mão de obra) é de <strong>R$ ${parseFloat(e.empreitada || 0).toLocaleString('pt-BR', {minimumFractionDigits: 2})}</strong>.</li>
+                        <li><strong>Valor da mão de obra: R$ ${parseFloat(maoObra || 0).toLocaleString('pt-BR', {minimumFractionDigits: 2})}</strong></li>
+                        <li style="margin-top:10px;">Nota: Valor referente à mão de obra. O custo total de <strong>empreitada</strong> (materiais e mão de obra) é de <strong>R$ ${parseFloat(empreitada || 0).toLocaleString('pt-BR', {minimumFractionDigits: 2})}</strong>.</li>
                         <li style="margin-top:10px;">Pagamento: 50% de sinal e 50% na entrega.</li></ul>
                 </div></div>`;
         } else {
             document.getElementById('pdf-tipo-txt').innerText = "LISTA DE MATERIAIS ELÉTRICOS - ATUALIZADA";
             let rows = '', total = 0;
-            e.materiais.forEach((m, i) => { 
+            const materiais = Array.from(document.querySelectorAll('.mat-grid')).map(row => ({
+                d: row.querySelector('.m-d').value, 
+                q: parseFloat(row.querySelector('.m-q').value) || 0, 
+                v: parseFloat(row.querySelector('.m-v').value) || 0
+            })).filter(m => m.d !== "");
+
+            materiais.forEach((m, i) => { 
                 let sub = m.q * m.v; total += sub; 
                 rows += `<tr><td style="text-align:center;">${i + 1}</td><td>${m.d}</td><td>${m.q} unid.</td><td>R$ ${parseFloat(m.v).toFixed(2).replace('.',',')}</td><td>R$ ${sub.toFixed(2).replace('.',',')}</td></tr>`; 
             });
             html = `<table class="pdf-table"><thead><tr><th style="width:5%; text-align:center;">Nº</th><th>Descrição</th><th>Qtd</th><th>Unit.</th><th>Total</th></tr></thead><tbody>${rows}</tbody><tfoot><tr style="font-weight:bold;"><td colspan="4" style="text-align:right">TOTAL ESTIMADO</td><td>R$ ${total.toFixed(2).replace('.',',')}</td></tr></tfoot></table>`;
         }
         document.getElementById('p-corpo').innerHTML = html;
-        const opt = { margin: 0, filename: `OS_${e.osNum}.pdf`, image: { type: 'jpeg', quality: 0.98 }, html2canvas: { scale: 3, useCORS: true, letterRendering: true, y: 0, scrollY: 0 }, jsPDF: { unit: 'mm', format: 'a4', orientation: 'portrait' } };
+        const opt = { margin: 0, filename: `OS_${osNum}.pdf`, image: { type: 'jpeg', quality: 0.98 }, html2canvas: { scale: 3, useCORS: true, letterRendering: true, y: 0, scrollY: 0 }, jsPDF: { unit: 'mm', format: 'a4', orientation: 'portrait' } };
         html2pdf().from(document.getElementById('pdf-template')).set(opt).save();
     }
     showScreen('screen-home');
